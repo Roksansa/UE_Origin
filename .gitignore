@@ -1,0 +1,10 @@
+Intermediate/
+Saved/
+DerivedDataCache/
+Binaries/
+Build/
+BuildFromEditor/
+BuildFromBat/
+.idea/
+.vs/
+.p4ignore.txt
