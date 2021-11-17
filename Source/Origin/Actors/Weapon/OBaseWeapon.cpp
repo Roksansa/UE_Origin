@@ -22,31 +22,13 @@ void AOBaseWeapon::BeginPlay()
 {
 	Super::BeginPlay();
 	check(WeaponMesh);
+	OnMakeShot.AddUObject(this, &AOBaseWeapon::PlayVisibleShot);
 }
 
-void AOBaseWeapon::Fire()
+
+EEquippableItemType AOBaseWeapon::GetItemType() const
 {
-	UE_LOG(LogBaseWeapon, Display, TEXT("Fire"));
-	MakeShot();
-}
-
-void AOBaseWeapon::MakeShot()
-{
-	if (!GetWorld())
-	{
-		return;
-	}
-	
-	FVector TraceStartViewPoint;
-	FVector TraceEnd;
-
-	if (!GetTraceData(TraceStartViewPoint, TraceEnd))
-	{
-		return;
-	}
-
-	FHitResult HitResult;
-	MakeHit(HitResult, TraceStartViewPoint, TraceEnd);
+	return EquippableItemType;
 }
 
 APlayerController* AOBaseWeapon::GetPlayerController() const
@@ -77,6 +59,11 @@ FVector AOBaseWeapon::GetMuzzleWorldLocation() const
 	return WeaponMesh->GetSocketTransform(MuzzleSocketName).GetLocation();
 }
 
+FVector AOBaseWeapon::GetShootDirection(const FVector& ViewRotationVector) const
+{
+	return ViewRotationVector;
+}
+
 bool AOBaseWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
 {
 	FVector ViewLocation;
@@ -90,7 +77,7 @@ bool AOBaseWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
 	const FVector ViewRotationVector = ViewRotation.Vector();
 	const FVector MuzzleLocation = GetMuzzleWorldLocation();
 	TraceStart = ViewLocation + ViewRotationVector * ((MuzzleLocation - ViewLocation) | ViewRotationVector);
-	const FVector ShootDirection = ViewRotationVector;
+	const FVector ShootDirection = GetShootDirection(ViewRotationVector);
 	TraceEnd = TraceStart + ShootDirection * TraceMaxDistance;
 	return true;
 }
@@ -123,4 +110,40 @@ void AOBaseWeapon::MakeHit(FHitResult& HitResult, const FVector TraceStart, cons
 	
 	DrawDebugSphere(GetWorld(), HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd, bComplexTrace ? 15.f : 10.f, 24, bComplexTrace ? FColor::Cyan : FColor::Magenta, false, 5.f);
 	DrawDebugLine(GetWorld(), MuzzleLocation, HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd , FColor::Orange, false, 3.f, 0, 3.f);
+}
+
+void AOBaseWeapon::PlayVisibleShot()
+{
+	PlayAnimMontage(FireAnimMontage);
+}
+
+float AOBaseWeapon::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	UAnimInstance * AnimInstance = (WeaponMesh)? WeaponMesh->GetAnimInstance() : nullptr; 
+	if( AnimMontage && AnimInstance )
+	{
+		float const Duration = AnimInstance->Montage_Play(AnimMontage, InPlayRate);
+
+		if (Duration > 0.f)
+		{
+			// Start at a given Section.
+			if( StartSectionName != NAME_None )
+			{
+				AnimInstance->Montage_JumpToSection(StartSectionName, AnimMontage);
+			}
+
+			return Duration;
+		}
+	}	
+
+	return 0.f;
+}
+
+void AOBaseWeapon::MakeDamage(const FHitResult& HitResult) const
+{
+	AActor* Actor = HitResult.GetActor();
+	if (IsValid(Actor))
+	{
+		Actor->TakeDamage(DamageAmount, FPointDamageEvent{}, GetInstigatorController(), GetOwner());
+	}
 }

@@ -1,0 +1,84 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "OPrimaryAttributesComponent.h"
+
+UOPrimaryAttributesComponent::UOPrimaryAttributesComponent()
+{
+	PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UOPrimaryAttributesComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	check(GetOwner());
+	CurrentHealth = MaxHealth;
+	GetOwner()->OnTakeAnyDamage.AddDynamic(this, &UOPrimaryAttributesComponent::OnTakeAnyDamage);
+
+	CurrentStamina = MaxStamina;
+	if (MinStaminaForStartSprint > MaxStamina)
+	{
+		MinStaminaForStartSprint = MaxStamina;
+	}
+}
+
+void UOPrimaryAttributesComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
+	AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Damage > 0.f && CurrentHealth > SMALL_NUMBER)
+	{
+		const float PrevHealth = CurrentHealth;
+		CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
+		if (CurrentHealth != PrevHealth)
+		{
+			OnChangeHealth.Broadcast(CurrentHealth, -Damage);
+
+			GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Red, FString::Printf(TEXT("Health: %.2f"), CurrentHealth), true,
+				FVector2D(2, 2));
+			if (CurrentHealth < SMALL_NUMBER)
+			{
+				GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Blue, FString::Printf(TEXT("Die:")), true,
+					FVector2D(2, 2));
+				OnDie.Broadcast();
+			}
+		}
+	}
+}
+
+void UOPrimaryAttributesComponent::TryChangeStamina(float DeltaSeconds, bool bIsSprinting)
+{
+	//check if !bIsSprinting
+	if (!bIsSprinting && CurrentStamina < MaxStamina)
+	{
+		CurrentStamina = FMath::Min(CurrentStamina + StaminaRestoreVelocity * DeltaSeconds, MaxStamina);
+	}
+	//check if bIsSprinting
+	if (bIsSprinting && CurrentStamina > 0.0001f)
+	{
+		CurrentStamina = FMath::Max(CurrentStamina - SprintStaminaConsumptionVelocity * DeltaSeconds, 0.f);
+	}
+
+	//switch IsOutOfStamina after all calc
+	//first - we can not start sprint - change and return
+	if (!bIsOutOfStamina && CurrentStamina <= 0.0001f)
+	{
+		bIsOutOfStamina = true;
+	}
+	//second - we can start sprint - change and return
+	if (bIsOutOfStamina && CurrentStamina >= MinStaminaForStartSprint)
+	{
+		bIsOutOfStamina = false;
+	}
+
+	if (CurrentStamina < MaxStamina)
+	{
+		const FColor CurrentColor = bIsOutOfStamina ? FColor::Red : FColor::Green;
+		GEngine->AddOnScreenDebugMessage(1, 1.0f, CurrentColor, FString::Printf(TEXT("Stamina: %.2f"), CurrentStamina), true,
+			FVector2D(2, 2));
+	}
+}
+
+bool UOPrimaryAttributesComponent::GetIsOutOfStamina() const
+{
+	return bIsOutOfStamina;
+}

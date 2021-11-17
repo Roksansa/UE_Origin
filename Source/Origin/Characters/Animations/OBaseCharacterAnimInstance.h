@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OTypes.h"
 #include "Animation/AnimInstance.h"
 #include "OBaseCharacterAnimInstance.generated.h"
 
@@ -97,6 +98,9 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	float LerpSpeed = 0.1f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
+	EEquippableItemType WeaponItemType = EEquippableItemType::None;
 private:
 	TWeakObjectPtr<class AOBaseCharacter> CurrentCharacter;
 	TWeakObjectPtr<class UOCharacterIKComponent> IKComp;

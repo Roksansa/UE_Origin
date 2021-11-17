@@ -4,7 +4,9 @@
 #include "OBaseCharacter.h"
 
 #include "Actors/Weapon/OBaseWeapon.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/OCharacterIKComponent.h"
+#include "Components/OPrimaryAttributesComponent.h"
 #include "Components/OWeaponComponent.h"
 #include "Curves/CurveVector.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -26,27 +28,29 @@ AOBaseCharacter::AOBaseCharacter(const FObjectInitializer& ObjectInitializer)
 	LedgeDetectorComponent = CreateDefaultSubobject<UOLedgeDetectorComponent>(TEXT("LedgeDetector"));
 	IKComponent = CreateDefaultSubobject<UOCharacterIKComponent>(TEXT("CharacterIKComponent"));
 	WeaponComponent = CreateDefaultSubobject<UOWeaponComponent>(TEXT("WeaponComponent"));
+	PrimaryAttributesComponent = CreateDefaultSubobject<UOPrimaryAttributesComponent>(TEXT("AttributesComponent"));
 }
 
 void AOBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentStamina = MaxStamina;
-	if (MinStaminaForStartSprint > MaxStamina)
-	{
-		MinStaminaForStartSprint = MaxStamina;
-	}
+	check(PrimaryAttributesComponent);
+	check(BaseCharacterMovementComponent);
+	check(WeaponComponent);
+
+	PrimaryAttributesComponent->OnDie.AddUObject(this, &AOBaseCharacter::OnDie);
+	PrimaryAttributesComponent->OnChangeHealth.AddUObject(this, &AOBaseCharacter::OnChangeHealth);
 }
 
 void AOBaseCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	TryChangeStamina(DeltaSeconds);
+	PrimaryAttributesComponent->TryChangeStamina(DeltaSeconds, bIsSprinting);
 }
 
 bool AOBaseCharacter::GetIsOutOfStamina() const
 {
-	return bIsOutOfStamina;
+	return PrimaryAttributesComponent->GetIsOutOfStamina();
 }
 
 bool AOBaseCharacter::GetIsCrawling() const
@@ -61,18 +65,12 @@ void AOBaseCharacter::SetIsCrawling(bool bCrawl)
 
 void AOBaseCharacter::UnCrawl(bool bClientSimulation)
 {
-	if (BaseCharacterMovementComponent)
-	{
-		BaseCharacterMovementComponent->bWantsToCrawling = false;
-	}
+	BaseCharacterMovementComponent->bWantsToCrawling = false;
 }
 
 void AOBaseCharacter::Crawl(bool bClientSimulation)
 {
-	if (BaseCharacterMovementComponent)
-	{
-		BaseCharacterMovementComponent->bWantsToCrawling = true;
-	}
+	BaseCharacterMovementComponent->bWantsToCrawling = true;
 }
 
 void AOBaseCharacter::ChangeCrouchState()
@@ -81,7 +79,7 @@ void AOBaseCharacter::ChangeCrouchState()
 	{
 		return;
 	}
-	if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->bWantsToCrawling || GetCharacterMovement()->IsCrouching())
+	if (BaseCharacterMovementComponent->bWantsToCrawling || GetCharacterMovement()->IsCrouching())
 	{
 		UnCrouch();
 	}
@@ -97,14 +95,24 @@ void AOBaseCharacter::ChangeCrawlState()
 	{
 		return;
 	}
-	if (BaseCharacterMovementComponent && GetBaseCharacterMovementComponent()->IsCrawling())
+	if (BaseCharacterMovementComponent->IsCrawling())
 	{
 		UnCrawl();
 	}
-	else if (GetCharacterMovement()->IsCrouching())
+	else if (BaseCharacterMovementComponent->IsCrouching())
 	{
 		Crawl();
 	}
+}
+
+void AOBaseCharacter::StartFire()
+{
+	WeaponComponent->StartFire();
+}
+
+void AOBaseCharacter::StopFire()
+{
+	WeaponComponent->StopFire();
 }
 
 UOBaseCharacterMovementComponent* AOBaseCharacter::GetBaseCharacterMovementComponent() const
@@ -119,74 +127,34 @@ UOCharacterIKComponent* AOBaseCharacter::GetIKComponent() const
 
 bool AOBaseCharacter::CanSprint()
 {
-	if (BaseCharacterMovementComponent)
-	{
-		return !bIsOutOfStamina && !bIsCrawling && BaseCharacterMovementComponent->CanSprint();
-	}
-
-	return !bIsOutOfStamina;
+	return !PrimaryAttributesComponent->GetIsOutOfStamina() && !bIsCrawling && BaseCharacterMovementComponent->CanSprint();
 }
 
-void AOBaseCharacter::TryChangeStamina(float DeltaSeconds)
-{
-	//check if !bIsSprinting
-	if (!bIsSprinting && CurrentStamina < MaxStamina)
-	{
-		CurrentStamina = FMath::Min(CurrentStamina + StaminaRestoreVelocity * DeltaSeconds, MaxStamina);
-	}
-	//check if bIsSprinting
-	if (bIsSprinting && CurrentStamina > 0.0001f)
-	{
-		CurrentStamina = FMath::Max(CurrentStamina - SprintStaminaConsumptionVelocity * DeltaSeconds, 0.f);
-	}
-
-	//switch IsOutOfStamina after all calc
-	//first - we can not start sprint - change and return
-	if (!bIsOutOfStamina && CurrentStamina <= 0.0001f)
-	{
-		bIsOutOfStamina = true;
-	}
-	//second - we can start sprint - change and return
-	if (bIsOutOfStamina && CurrentStamina >= MinStaminaForStartSprint)
-	{
-		bIsOutOfStamina = false;
-	}
-
-	if (CurrentStamina < MaxStamina)
-	{
-		const FColor CurrentColor = bIsOutOfStamina ? FColor::Red : FColor::Green;
-		GEngine->AddOnScreenDebugMessage(1, 1.0f, CurrentColor, FString::Printf(TEXT("Stamina: %.2f"), CurrentStamina), true,
-			FVector2D(2, 2));
-	}
-}
 
 void AOBaseCharacter::ChangeSprint(bool bWantsToSprint)
 {
-	if (BaseCharacterMovementComponent)
+	if (bWantsToSprint)
 	{
-		if (bWantsToSprint)
+		if (CanSprint())
 		{
-			if (CanSprint())
-			{
-				BaseCharacterMovementComponent->bWantsToSprint = true;
-			}
+			BaseCharacterMovementComponent->bWantsToSprint = true;
 		}
-		else
-		{
-			BaseCharacterMovementComponent->bWantsToSprint = false;
-		}
+	}
+	else
+	{
+		BaseCharacterMovementComponent->bWantsToSprint = false;
 	}
 }
 
 void AOBaseCharacter::Jump()
 {
-	if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->IsMantling())
+	if (BaseCharacterMovementComponent->IsMantling())
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green,
 			FString::Format(TEXT(" JumpMantle CHECK {0} "), {BaseCharacterMovementComponent->IsMantling()}));
 		return;
 	}
-	if (bIsCrawling && BaseCharacterMovementComponent)
+	if (bIsCrawling)
 	{
 		BaseCharacterMovementComponent->bWantsToCrawling = false;
 		BaseCharacterMovementComponent->bWantsToCrouch = false;
@@ -261,7 +229,7 @@ const FOMantlingSettings& AOBaseCharacter::GetMantlingSettings(float LedgeHeight
 
 void AOBaseCharacter::Mantle()
 {
-	if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->IsMantling() || bIsCrawling)
+	if (BaseCharacterMovementComponent->IsMantling() || bIsCrawling)
 	{
 		return;
 	}
@@ -284,6 +252,11 @@ void AOBaseCharacter::Mantle()
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, FString::Format(TEXT("Mantle {0} "), {false}));
 	}
+}
+
+void AOBaseCharacter::NextWeapon()
+{
+	WeaponComponent->NextWeapon();
 }
 
 bool AOBaseCharacter::GetIsOverlapVolumeSurface() const
@@ -311,4 +284,28 @@ void AOBaseCharacter::RegisterInteractiveActor(AOInteractiveActor* InterActor)
 void AOBaseCharacter::UnregisterInteractiveActor(AOInteractiveActor* InterActor)
 {
 	AvailableInteractiveActors.Remove(InterActor);
+}
+
+const UOWeaponComponent* AOBaseCharacter::GetWeaponComponent() const
+{
+	return WeaponComponent;
+}
+
+void AOBaseCharacter::OnDie()
+{
+	PlayAnimMontage(DeathAnimMontage);
+	GetCharacterMovement()->DisableMovement();
+	GetController()->DisableInput(nullptr);
+	SetLifeSpan(5.f);
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	WeaponComponent->StopFire();
+}
+
+void AOBaseCharacter::OnChangeHealth(float Health, float Diff)
+{
+	if (Health > SMALL_NUMBER && Diff < 0)
+	{
+		const FOWeaponAnimDescription Desc = WeaponComponent->GetWeaponAnimDescription();
+		PlayAnimMontage(Desc.HitAnimMontage);
+	}
 }

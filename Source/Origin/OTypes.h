@@ -18,10 +18,14 @@ const FName DebugCategory_IKFootCharacter("IKFootCharacter");
 
 const FName MuzzleSocketName = FName("MuzzleSocket");
 const FName WeaponSocketName = FName("WeaponSocket");
+const FName ArmoryEquipSocketName = FName("ArmorySocket");
 
 UENUM(BlueprintType)
 enum class EEquippableItemType : uint8
 {
 	None,
-	Rifle
+	Rifle,
+	Launcher,
+	Shotgun,
+	MAX UMETA(Hidden)
 };

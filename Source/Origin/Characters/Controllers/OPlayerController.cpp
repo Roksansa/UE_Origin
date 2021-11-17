@@ -41,7 +41,9 @@ void AOPlayerController::SetupInputComponent()
     InputComponent->BindAction("Crouch", EInputEvent::IE_Pressed, this, &AOPlayerController::ChangeCrouchState);
     InputComponent->BindAction<FChangeSprint>("Sprint", EInputEvent::IE_Pressed, this, &AOPlayerController::ChangeSprint, true);
     InputComponent->BindAction<FChangeSprint>("Sprint", EInputEvent::IE_Released, this, &AOPlayerController::ChangeSprint, false);
-	InputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &AOPlayerController::Fire);
+	InputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &AOPlayerController::StartFireWithWeapon);
+	InputComponent->BindAction("Fire", EInputEvent::IE_Released, this, &AOPlayerController::StopFire);
+	InputComponent->BindAction("NextWeapon", EInputEvent::IE_Pressed, this, &AOPlayerController::NextWeapon);
 }
 
 void AOPlayerController::ChangeSprint(bool bWantsToSprint)
@@ -173,10 +175,26 @@ void AOPlayerController::InteractionWithLadder()
     }
 }
 
-void AOPlayerController::Fire()
+void AOPlayerController::StartFireWithWeapon()
 {
 	if (CachedBaseCharacter.IsValid())
 	{
-		CachedBaseCharacter->Fire();
+		CachedBaseCharacter->StartFire();
+	}
+}
+
+void AOPlayerController::StopFire()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->StopFire();
+	}
+}
+
+void AOPlayerController::NextWeapon()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->NextWeapon();
 	}
 }

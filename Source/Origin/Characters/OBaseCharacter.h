@@ -14,6 +14,7 @@ class UOCharacterIKComponent;
 class UOLedgeDetectorComponent;
 class AOLadderInteractiveActor;
 class UOWeaponComponent;
+class UOPrimaryAttributesComponent;
 
 UCLASS(Abstract, NotBlueprintable)
 class ORIGIN_API AOBaseCharacter : public ACharacter
@@ -45,7 +46,8 @@ public:
 	virtual void InteractionWithLadder(){};
 	virtual void ClimbLadder(float Value) {};
 	
-	virtual void Fire(){};
+	virtual void StartFire();
+	virtual void StopFire();
 	
 	UOBaseCharacterMovementComponent* GetBaseCharacterMovementComponent() const;
 
@@ -77,6 +79,8 @@ public:
 
 	virtual void Mantle();
 
+	virtual void NextWeapon();
+
 	bool GetIsOverlapVolumeSurface() const;
 	UFUNCTION(BlueprintCallable)
 	void ChangeBuoyancyFromSurfaceVolume(bool bIsOverlapVolumeSurfaceNow);
@@ -84,6 +88,7 @@ public:
 	void RegisterInteractiveActor(AOInteractiveActor* InterActor);
 	void UnregisterInteractiveActor(AOInteractiveActor* InterActor);
 
+	const UOWeaponComponent* GetWeaponComponent() const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
@@ -100,21 +105,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UOWeaponComponent* WeaponComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UOPrimaryAttributesComponent* PrimaryAttributesComponent;
+
 	virtual bool CanSprint();
-
-	//begin stamina properties
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float MaxStamina = 30.f; 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float StaminaRestoreVelocity = 7.f; 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float SprintStaminaConsumptionVelocity = 10.f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float MinStaminaForStartSprint = 30.f;
-
-	void TryChangeStamina(float DeltaSeconds);
-	bool bIsOutOfStamina;
-	//end stamina properties
 
 	UPROPERTY(BlueprintReadOnly, Category = "Config|Crawling")
 	uint32 bIsCrawling:1;
@@ -137,9 +131,15 @@ protected:
 	TArray<AOInteractiveActor*> AvailableInteractiveActors;
 
 	const AOLadderInteractiveActor* GetAvailableLadder() const;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Anim")
+	UAnimMontage* DeathAnimMontage;
+	UFUNCTION()
+	void OnDie();
+
+	UFUNCTION()
+	void OnChangeHealth(float Health, float Diff);
 private:
 	void FillMantlingMovementParameters(struct FLedgeDescription LedgeDescription, FMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;
-
-	float CurrentStamina = 0.f;
 };

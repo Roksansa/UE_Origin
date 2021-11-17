@@ -43,7 +43,8 @@ public:
 	virtual void ClimbLadder(float Value) override;
 	virtual void InteractionWithLadder() override;
 
-	virtual void Fire() override;
+	virtual void StartFire() override;
+	virtual void StopFire() override;
 
 	float GetViewPitchMin() const;
 	float GetViewPitchMax() const;

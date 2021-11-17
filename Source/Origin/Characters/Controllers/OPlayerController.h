@@ -43,7 +43,9 @@ private:
     void ClimbLadder(float Value);
     void InteractionWithLadder();
 
-	void Fire();
+	void StartFireWithWeapon();
+	void StopFire();
+	void NextWeapon();
 
     // gimbal lock for swim up and swim forward for y = 90. if rotate vector up to forward vector
     float LastSwimUpValue = 0.f;

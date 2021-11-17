@@ -5,6 +5,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "Components/OCharacterIKComponent.h"
+#include "Components/OWeaponComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Origin/Actors/OLadderInteractiveActor.h"
@@ -40,6 +41,8 @@ void UOBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bIsSwimmingOnSurface = CharacterMovementComponent->IsSwimming() && CurrentCharacter->GetIsOverlapVolumeSurface();
 	bIsOnLadder = CharacterMovementComponent->IsClimbingLadder();
 	ClimbingLadderSpeedRatio = bIsOnLadder ? CharacterMovementComponent->GetClimbingLadderSpeedRatio() : Speed;
+
+	WeaponItemType = CurrentCharacter->GetWeaponComponent()->GetWeaponType();
 	
 	CalcDirection();
 	CalcAimRotation(CurrentCharacter->GetBaseAimRotation());
@@ -65,12 +68,19 @@ void UOBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UOBaseCharacterAnimInstance::CalcDirection()
 {
+	if (CurrentCharacter->GetVelocity().IsZero())
+	{
+		Direction = 0.f;
+		return;
+	}
 	const FVector VelocityNormal = CurrentCharacter->GetVelocity().GetSafeNormal();
 	const FVector ForwardVector = CurrentCharacter->GetActorForwardVector();
 	const float DotProduct = FVector::DotProduct(ForwardVector, VelocityNormal);
 	const FVector CrossProduct = FVector::CrossProduct(ForwardVector, VelocityNormal);
 	const float Degree = UKismetMathLibrary::DegAcos(DotProduct);
-	Direction = Degree * CrossProduct.Z;
+	GEngine->AddOnScreenDebugMessage(3, 1.0f, FColor::Orange, FString::Format(TEXT(" Cross {0} -- Degree -- {1} -- Res {2} "),
+{CrossProduct.ToString(), Degree, (Degree * FMath::Sign(CrossProduct.Z))}), true);
+	Direction = FMath::IsNearlyZero(CrossProduct.Z, 0.01f) ? FMath::Abs(Degree) : Degree * FMath::Sign(CrossProduct.Z);
 }
 
 void UOBaseCharacterAnimInstance::CalcAimRotation(const FRotator& Rotator)
@@ -82,8 +92,6 @@ void UOBaseCharacterAnimInstance::CalcAimRotation(const FRotator& Rotator)
 		const float ValueClamped = UKismetMathLibrary::MapRangeClamped(FMath::Abs(Rotator.Pitch), MinAimYawIn,MaxAimYawIn, MinAimPitch, MaxAimPitch);
 		CurrentPitch = UKismetMathLibrary::Lerp(CurrentPitch, ValueClamped, LerpSpeed);
 		AimRotation.Pitch = CurrentPitch;
-		GEngine->AddOnScreenDebugMessage(3, 1.0f, FColor::Orange, FString::Format(TEXT(" IK RightFootSocketRotator {0} -- {1} -- {2} "),
-		{AimRotation.Yaw, AimRotation.Pitch}), true);
 	}
 }
 

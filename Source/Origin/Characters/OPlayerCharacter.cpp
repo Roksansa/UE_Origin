@@ -5,6 +5,7 @@
 
 
 #include "Camera/CameraComponent.h"
+#include "Components/OPrimaryAttributesComponent.h"
 #include "Components/OWeaponComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -143,7 +144,7 @@ bool AOPlayerCharacter::CanJumpInternal_Implementation() const
 {
 	//test debug message for correct use jump and within variable - now ok
 	//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Black, FString::Format(TEXT("{0} - {1} - {2}"), {bIsCrouched, BaseCharacterMovementComponent->CanUnCrouch(), Super::CanJumpInternal_Implementation()}));
-	return !bIsOutOfStamina && (bIsCrouched && (!BaseCharacterMovementComponent || BaseCharacterMovementComponent->CanGrowCapsule()) ||
+	return !PrimaryAttributesComponent->GetIsOutOfStamina() && (bIsCrouched && BaseCharacterMovementComponent->CanGrowCapsule() ||
 	                            Super::CanJumpInternal_Implementation());
 }
 
@@ -189,7 +190,7 @@ void AOPlayerCharacter::MoveSwimUp(float Value)
 				FString::Format(TEXT(" bIsOverlapVolumeSurface {0} "), {bIsOverlapVolumeSurface}), true, FVector2D(2, 2));
 			FVector JumpDir(0.f);
 			FVector WallNormal(0.f);
-			if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->ShouldJumpOutOfWater(JumpDir) &&
+			if (BaseCharacterMovementComponent->ShouldJumpOutOfWater(JumpDir) &&
 			    BaseCharacterMovementComponent->CheckWaterJump(JumpDir, WallNormal))
 			{
 				GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Red,
@@ -207,12 +208,9 @@ void AOPlayerCharacter::OnStartSwimming(float HalfHeightAdjust, float ScaledHeig
 {
 	Super::OnStartSwimming(HalfHeightAdjust, ScaledHeightAdjust);
 
-	if (IsValid(BaseCharacterMovementComponent))
-	{
-		bUseControllerRotationYaw = false;
-		BaseCharacterMovementComponent->bOrientRotationToMovement = true;
-	}
-	
+	bUseControllerRotationYaw = false;
+	BaseCharacterMovementComponent->bOrientRotationToMovement = true;
+
 	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(GetClass());
 	SpringArmComponent->TargetOffset = DefaultChar->SpringArmComponent->TargetOffset;
 	if (GetMesh() && DefaultChar->GetMesh())
@@ -228,11 +226,10 @@ void AOPlayerCharacter::OnStartSwimming(float HalfHeightAdjust, float ScaledHeig
 void AOPlayerCharacter::OnEndSwimming(float HalfHeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnEndSwimming(HalfHeightAdjust, ScaledHeightAdjust);
-	if (IsValid(BaseCharacterMovementComponent))
-	{
-		bUseControllerRotationYaw = true;
-		BaseCharacterMovementComponent->bOrientRotationToMovement = false;
-	}
+
+	bUseControllerRotationYaw = true;
+	BaseCharacterMovementComponent->bOrientRotationToMovement = false;
+
 	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(GetClass());
 	SpringArmComponent->TargetOffset = DefaultChar->SpringArmComponent->TargetOffset;
 	if (GetMesh() && DefaultChar->GetMesh())
@@ -271,9 +268,14 @@ void AOPlayerCharacter::InteractionWithLadder()
 	}
 }
 
-void AOPlayerCharacter::Fire()
+void AOPlayerCharacter::StartFire()
 {
-	WeaponComponent->Fire();
+	Super::StartFire();
+}
+
+void AOPlayerCharacter::StopFire()
+{
+	Super::StopFire();
 }
 
 float AOPlayerCharacter::GetViewPitchMin() const
