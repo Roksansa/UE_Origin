@@ -31,6 +31,28 @@ AOPlayerCharacter::AOPlayerCharacter()
 	GetCharacterMovement()->CrouchedHalfHeight = 65.f;
 }
 
+void AOPlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	FTimerHandle CheckFireTimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(CheckFireTimerHandle, [this]()
+	{
+		const bool bAllowFire = CanUseWeapon();
+
+		if (bAllowFire && bWantFire && WeaponComponent->GetState() == EOWeaponUseState::Idle)
+		{
+			OnAllowFire.Broadcast(bAllowFire);
+			return;
+		}
+
+		if (!bAllowFire && WeaponComponent->GetState() == EOWeaponUseState::Fire)
+		{
+			OnAllowFire.Broadcast(bAllowFire);
+		}
+	}, 0.5f, true);
+}
+
 void AOPlayerCharacter::LookUp(float Value)
 {
 	AddControllerPitchInput(Value);
@@ -271,11 +293,17 @@ void AOPlayerCharacter::InteractionWithLadder()
 void AOPlayerCharacter::StartFire()
 {
 	Super::StartFire();
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	bWantFire = true;
 }
 
 void AOPlayerCharacter::StopFire()
 {
 	Super::StopFire();
+	bWantFire = false;
 }
 
 float AOPlayerCharacter::GetViewPitchMin() const

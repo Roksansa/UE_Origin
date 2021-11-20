@@ -3,17 +3,25 @@
 
 #include "ORifleWeapon.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogBaseWeapon, All, All);
+DEFINE_LOG_CATEGORY_STATIC(LogRifleWeapon, All, All);
 
 void AORifleWeapon::StartFire()
 {
-	UE_LOG(LogBaseWeapon, Display, TEXT("Fire"));
-	GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &AORifleWeapon::MakeShot, TimerBetweenShots, true);
-	MakeShot();
+	UE_LOG(LogRifleWeapon, Display, TEXT("Fire"));
+	if (GetWorldTimerManager().GetTimerElapsed(ShotTimerHandle) > 0.f)
+	{
+		const float TimerLeft = GetWorldTimerManager().GetTimerRate(ShotTimerHandle) - GetWorldTimerManager().GetTimerElapsed(ShotTimerHandle);
+		GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &AORifleWeapon::MakeShot, TimerLeft, false);
+	}
+	else
+	{
+		MakeShot();
+	}
 }
 
 void AORifleWeapon::StopFire()
 {
+	Super::StopFire();
 	GetWorldTimerManager().ClearTimer(ShotTimerHandle);
 }
 
@@ -21,6 +29,15 @@ void AORifleWeapon::MakeShot()
 {
 	if (!GetWorld())
 	{
+		return;
+	}
+	if (IsAmmoEmpty())
+	{
+		if (bIsAutoReload)
+		{
+			OnWasOutOfBullets.Broadcast();
+		}
+		StopFire();
 		return;
 	}
 	
@@ -40,6 +57,8 @@ void AORifleWeapon::MakeShot()
 		MakeDamage(HitResult);
 	}
 	OnMakeShot.Broadcast();
+	DecreaseAmmo();
+	GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &AORifleWeapon::MakeShot, TimerBetweenShots, false);
 }
 
 FVector AORifleWeapon::GetShootDirection(const FVector& ViewRotationVector) const

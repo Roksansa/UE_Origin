@@ -3,6 +3,7 @@
 
 #include "OPlayerController.h"
 
+#include "GameFramework/PlayerInput.h"
 #include "Origin/Characters/OBaseCharacter.h"
 #include "Origin/Characters/OPlayerCharacter.h"
 
@@ -19,6 +20,17 @@ void AOPlayerController::SetPawn(APawn* InPawn)
             PlayerCameraManager->ViewPitchMax = PlayerCharacter->GetViewPitchMax();
         }      
     }
+}
+
+bool AOPlayerController::IsPressedAnyKeyForAction(const FName ActionName) const
+{
+	const TArray<FInputActionKeyMapping>& ArrayKeys = PlayerInput->GetKeysForAction(ActionName);
+	bool bIsPressed = false;
+	for (const auto ActionKey : ArrayKeys)
+	{
+		bIsPressed = bIsPressed || IsInputKeyDown(ActionKey.Key);
+	}
+	return bIsPressed;
 }
 
 void AOPlayerController::SetupInputComponent()
@@ -44,6 +56,7 @@ void AOPlayerController::SetupInputComponent()
 	InputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &AOPlayerController::StartFireWithWeapon);
 	InputComponent->BindAction("Fire", EInputEvent::IE_Released, this, &AOPlayerController::StopFire);
 	InputComponent->BindAction("NextWeapon", EInputEvent::IE_Pressed, this, &AOPlayerController::NextWeapon);
+	InputComponent->BindAction("ReloadAmmo", EInputEvent::IE_Pressed, this, &AOPlayerController::ReloadAmmo);
 }
 
 void AOPlayerController::ChangeSprint(bool bWantsToSprint)
@@ -196,5 +209,13 @@ void AOPlayerController::NextWeapon()
 	if (CachedBaseCharacter.IsValid())
 	{
 		CachedBaseCharacter->NextWeapon();
+	}
+}
+
+void AOPlayerController::ReloadAmmo()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->ReloadAmmo();
 	}
 }

@@ -28,10 +28,10 @@ public:
 	virtual void BeginPlay() override;
 	virtual void LookUp(float Value) {}
 	virtual void Turn(float Value) {}
-	virtual void MoveRight(float Value) {};
-	virtual void MoveForward(float Value) {};
+	virtual void MoveRight(float Value) {}
+	virtual void MoveForward(float Value) {}
 
-	virtual void TurnAtRate(float Value) {};
+	virtual void TurnAtRate(float Value) {}
 	virtual void LookUpAtRate(float Value) {};
 
 	virtual void ChangeCrouchState();
@@ -48,6 +48,9 @@ public:
 	
 	virtual void StartFire();
 	virtual void StopFire();
+	virtual void ReloadAmmo();
+	virtual void NextWeapon();
+	bool CanUseWeapon() const;
 	
 	UOBaseCharacterMovementComponent* GetBaseCharacterMovementComponent() const;
 
@@ -79,8 +82,6 @@ public:
 
 	virtual void Mantle();
 
-	virtual void NextWeapon();
-
 	bool GetIsOverlapVolumeSurface() const;
 	UFUNCTION(BlueprintCallable)
 	void ChangeBuoyancyFromSurfaceVolume(bool bIsOverlapVolumeSurfaceNow);
@@ -89,6 +90,7 @@ public:
 	void UnregisterInteractiveActor(AOInteractiveActor* InterActor);
 
 	const UOWeaponComponent* GetWeaponComponent() const;
+	bool IsWeaponInHand() const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
@@ -140,6 +142,6 @@ protected:
 	UFUNCTION()
 	void OnChangeHealth(float Health, float Diff);
 private:
-	void FillMantlingMovementParameters(struct FLedgeDescription LedgeDescription, FMantlingMovementParameters& MantlingMovementParameters) const;
+	void FillMantlingMovementParameters(struct FOLedgeDescription LedgeDescription, FOMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;
 };

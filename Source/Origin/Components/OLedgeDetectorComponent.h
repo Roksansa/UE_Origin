@@ -8,7 +8,7 @@
 
 
 USTRUCT(BlueprintType)
-struct FLedgeDescription
+struct ORIGIN_API FOLedgeDescription
 {
 	GENERATED_BODY()
 
@@ -28,7 +28,7 @@ class ORIGIN_API UOLedgeDetectorComponent : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	bool TryDetectLedge(OUT FLedgeDescription& LedgeDescription);
+	bool TryDetectLedge(OUT FOLedgeDescription& LedgeDescription);
 	
 protected:
 	// Called when the game starts

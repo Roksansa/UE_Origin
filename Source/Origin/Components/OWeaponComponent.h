@@ -4,12 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "OTypes.h"
+#include "Actors/Weapon/OBaseWeapon.h"
 #include "Components/ActorComponent.h"
 #include "OWeaponComponent.generated.h"
 
 
 USTRUCT(BlueprintType)
-struct FOWeaponAnimDescription
+struct ORIGIN_API FOWeaponAnimDescription
 {
 	GENERATED_BODY()
 	
@@ -18,17 +19,40 @@ struct FOWeaponAnimDescription
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Anim")
 	UAnimMontage* HipAnimMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Anim")
+	UAnimMontage* ReloadAnimMontage;
+};
+
+USTRUCT(BlueprintType)
+struct ORIGIN_API FOAmmoDescription
+{
+	GENERATED_BODY()
+
+	/**
+	 * In AmmoDescriptions - max count for this ammo type
+	 * in CurrentAmmo - current Bullets count for this character
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Ammo", meta =(EditCondition ="!Infinity", ClampMin = 1, UIMin = 1))
+	int32 BulletsCount;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Ammo")
+	bool Infinity;
 };
 
 UENUM(BlueprintType)
-enum class EWeaponUseState : uint8
+enum class EOWeaponUseState : uint8
 {
 	None,
 	Idle,
+	Fire,
 	Reload,
 	Equip,
 	MAX UMETA(Hidden)
 };
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyFinishEquip, bool);
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnNotifyFinishReload, int32, bool);
 
 class AOBaseWeapon;
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -43,10 +67,23 @@ public:
 	void StartFire();
 	void StopFire();
 
+	const FOnNotifyFinishEquip& GetOnNotifyFinishEquip() const;
+	const FOnNotifyFinishReload& GetOnNotifyFinishReload() const;
+	
 	FOWeaponAnimDescription GetWeaponAnimDescription() const;
-	EEquippableItemType GetWeaponType() const;
+	EOEquippableItemType GetWeaponType() const;
+	int GetWeaponIndex() const;
 	void NextWeapon();
+	
+	bool AddAmmo(const EOAmmoType& Type, int32 Count);
+	void ReloadAmmo();
+
+	EOWeaponUseState GetState() const;
 protected:
+
+	FOnNotifyFinishEquip OnNotifyFinishEquip;
+	FOnNotifyFinishReload OnNotifyFinishReload;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Weapon")
 	TArray<TSubclassOf<AOBaseWeapon>> WeaponClasses;
 	
@@ -58,24 +95,54 @@ protected:
 	UAnimMontage* EquipAnimMontage;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config|Weapon")
-	TMap<EEquippableItemType, FOWeaponAnimDescription> WeaponAnimDescriptions;
-	
+	TMap<EOEquippableItemType, FOWeaponAnimDescription> WeaponAnimDescriptions;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="Config|Weapon")
+	TMap<EOAmmoType, FOAmmoDescription> AmmoDescriptions;
+
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 private:
+	EOWeaponUseState State = EOWeaponUseState::Idle;
+	
 	UPROPERTY()
 	AOBaseWeapon* CurrentWeapon;
-
 	UPROPERTY()
 	TArray<AOBaseWeapon*> ArmoryWeapons;
+	
+	static constexpr int AmmoStart = 1;
+	static constexpr int AmmoCount = static_cast<int>(EOAmmoType::MAX) - AmmoStart;
 
-	EWeaponUseState State = EWeaponUseState::Idle;
-
-	void AttachWeaponToSocket(AOBaseWeapon* Weapon, USkeletalMeshComponent* Mesh, const FName& EquipSocketName);
+	TArray<FOAmmoDescription, TInlineAllocator<AmmoCount>> CurrentAmmo;
+	FTimerHandle ReloadTimerHandle;
+	
+	void InitAmmo();
 	void SpawnWeapons();
+	void InitAnimation();
+	
+	void AttachWeaponToSocket(AOBaseWeapon* Weapon, USkeletalMeshComponent* Mesh, const FName& EquipSocketName);
+	bool CanFire() const;
 	void EquipWeapon(int WeaponIndex);
+	bool CanReload() const;
+	int GetAmmoIndex(EOAmmoType AmmoType) const;
+	UFUNCTION()
+	void OnFinishReload(int32 ReloadCount, bool bUseReloadCount);
+	void EndReload();
+	void Reload();
+
+	UFUNCTION()
+	void AmmoDesc();
 	
 	UFUNCTION()
 	void EndFire() const;
-	void PlayAnimMontage(UAnimMontage* AnimMontage) const;
+	UFUNCTION()
+	void OnFinishEquip(bool bIsOldWeapon);
+	float PlayAnimMontage(UAnimMontage* AnimMontage) const;
+
+	UFUNCTION()
+	void ResetFireInWeapon();
+
+	UFUNCTION()
+	void OnAllowFire(bool bAllowFire);
 };

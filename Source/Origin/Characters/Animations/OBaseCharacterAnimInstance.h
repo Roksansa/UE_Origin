@@ -100,7 +100,7 @@ protected:
 	float LerpSpeed = 0.1f;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
-	EEquippableItemType WeaponItemType = EEquippableItemType::None;
+	EOEquippableItemType WeaponItemType = EOEquippableItemType::None;
 private:
 	TWeakObjectPtr<class AOBaseCharacter> CurrentCharacter;
 	TWeakObjectPtr<class UOCharacterIKComponent> IKComp;

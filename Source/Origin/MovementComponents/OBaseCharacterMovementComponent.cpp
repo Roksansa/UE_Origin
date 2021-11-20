@@ -4,9 +4,11 @@
 #include "OBaseCharacterMovementComponent.h"
 
 
+#include "Characters/OPlayerCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "Curves/CurveVector.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Origin/Actors/OLadderInteractiveActor.h"
 #include "Origin/Characters/OBaseCharacter.h"
 
@@ -179,6 +181,10 @@ float UOBaseCharacterMovementComponent::GetMaxSpeed() const
 {
 	if (MovementMode == MOVE_Walking || MovementMode == MOVE_NavWalking)
 	{
+		if (CachedBaseCharacter && CachedBaseCharacter->IsWeaponInHand())
+		{
+			return MaxWalkWithWeaponSpeed;
+		}
 		if (IsCrouching())
 		{
 			return IsSprinting() ? SprintingMaxSpeedCrouch : MaxWalkSpeedCrouched;
@@ -353,7 +359,7 @@ void UOBaseCharacterMovementComponent::StopCrawl()
 	CachedBaseCharacter->OnEndCrawling(HalfHeightAdjust, ScaledHalfHeightAdjust);
 }
 
-void UOBaseCharacterMovementComponent::StartMantle(const FMantlingMovementParameters& MantlingMovementParameters)
+void UOBaseCharacterMovementComponent::StartMantle(const FOMantlingMovementParameters& MantlingMovementParameters)
 {
 	CurrentMantlingParameters = MantlingMovementParameters;
 	SetMovementMode(EMovementMode::MOVE_Custom, (uint8)ECustomMovementMode::CMOVE_Mantling);
@@ -576,9 +582,9 @@ void UOBaseCharacterMovementComponent::PhysClimbLadder(float DeltaTime, int32 It
 		DetachFromLadder(false);
 		return;
 	}
-	if (NewPosProjection > CurrentLadder->GetHeight() - LadderMaxTopffset)
+	if (NewPosProjection > CurrentLadder->GetHeight() - LadderMaxTopOffset)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Purple, FString::Format(TEXT(" Ladder !!! {0} { 1} {2} "), {NewPosProjection + NewLocation.Z , CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight(),  CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight() - LadderMaxTopffset}));
+		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Purple, FString::Format(TEXT(" Ladder !!! {0} { 1} {2} "), {NewPosProjection + NewLocation.Z , CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight(),  CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight() - LadderMaxTopOffset}));
 		CachedBaseCharacter->Mantle();
 		return;
 	}

@@ -7,7 +7,7 @@
 #include "OMantlingSettings.generated.h"
 
 USTRUCT(BlueprintType)
-struct FOMantlingSettings
+struct ORIGIN_API FOMantlingSettings
 {
 	GENERATED_BODY()
 
@@ -36,7 +36,7 @@ struct FOMantlingSettings
 	float MinHeightStartTime = 0.5f;
 };
 
-struct FMantlingMovementParameters
+struct ORIGIN_API FOMantlingMovementParameters
 {
 	FVector InitialLocation = FVector::ZeroVector;
 	FRotator InitialRotation = FRotator::ZeroRotator;

@@ -6,9 +6,8 @@
 #include "OBaseCharacter.h"
 #include "OPlayerCharacter.generated.h"
 
-/**
- * 
- */
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAllowFire, bool);
+
 UCLASS(Blueprintable)
 class ORIGIN_API AOPlayerCharacter : public AOBaseCharacter
 {
@@ -17,6 +16,8 @@ class ORIGIN_API AOPlayerCharacter : public AOBaseCharacter
 public:
 
 	AOPlayerCharacter();
+	
+	virtual void BeginPlay() override;
 	
 	virtual void LookUp(float Value) override;
 	virtual void Turn(float Value) override;
@@ -48,6 +49,8 @@ public:
 
 	float GetViewPitchMin() const;
 	float GetViewPitchMax() const;
+
+	FOnAllowFire OnAllowFire;
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character|Camera")
@@ -64,4 +67,7 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Crawling")
 	float LocationXMeshOffsetForCrawling = 50.f;
+
+private:
+	bool bWantFire = false;
 };

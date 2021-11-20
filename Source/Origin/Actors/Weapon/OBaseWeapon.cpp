@@ -8,8 +8,6 @@
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
 
-DEFINE_LOG_CATEGORY_STATIC(LogBaseWeapon, All, All);
-
 AOBaseWeapon::AOBaseWeapon()
 {
 	PrimaryActorTick.bCanEverTick = false;
@@ -26,7 +24,12 @@ void AOBaseWeapon::BeginPlay()
 }
 
 
-EEquippableItemType AOBaseWeapon::GetItemType() const
+void AOBaseWeapon::StopFire()
+{
+	OnStopFire.Broadcast();
+}
+
+EOEquippableItemType AOBaseWeapon::GetItemType() const
 {
 	return EquippableItemType;
 }
@@ -137,6 +140,43 @@ float AOBaseWeapon::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate,
 	}	
 
 	return 0.f;
+}
+
+void AOBaseWeapon::DecreaseAmmo()
+{
+	CurrentBullets--;
+}
+
+bool AOBaseWeapon::IsAmmoEmpty() const
+{
+	return CurrentBullets == 0;
+}
+
+const FOAmmoData& AOBaseWeapon::GetAmmoData() const
+{
+	return DefaultAmmo;
+}
+
+int32 AOBaseWeapon::GetCountBullets() const
+{
+	return CurrentBullets;
+}
+
+bool AOBaseWeapon::SetCountBullets(int32 NewCount)
+{
+	const int32 TempCount = CurrentBullets;
+	CurrentBullets = FMath::Clamp(CurrentBullets + NewCount, 0, DefaultAmmo.BulletsInClip);
+	return TempCount == CurrentBullets - NewCount;
+}
+
+bool AOBaseWeapon::IsAutoReload() const
+{
+	return bIsAutoReload;
+}
+
+bool AOBaseWeapon::IsFullAuto() const
+{
+	return bIsFullAuto;
 }
 
 void AOBaseWeapon::MakeDamage(const FHitResult& HitResult) const

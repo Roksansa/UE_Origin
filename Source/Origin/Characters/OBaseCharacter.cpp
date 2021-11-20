@@ -105,14 +105,47 @@ void AOBaseCharacter::ChangeCrawlState()
 	}
 }
 
+bool AOBaseCharacter::CanUseWeapon() const
+{
+	const bool bWalkingMode = BaseCharacterMovementComponent->MovementMode == EMovementMode::MOVE_Walking || BaseCharacterMovementComponent->MovementMode ==
+	                          EMovementMode::MOVE_NavWalking;
+	if (PrimaryAttributesComponent->GetIsOutOfStamina() || bIsSprinting || !bWalkingMode)
+	{
+		return false;
+	}
+	return true;
+}
+
 void AOBaseCharacter::StartFire()
 {
+	if (!CanUseWeapon())
+	{
+		return;
+	}
 	WeaponComponent->StartFire();
 }
 
 void AOBaseCharacter::StopFire()
 {
 	WeaponComponent->StopFire();
+}
+
+void AOBaseCharacter::ReloadAmmo()
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->ReloadAmmo();
+}
+
+void AOBaseCharacter::NextWeapon()
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->NextWeapon();
 }
 
 UOBaseCharacterMovementComponent* AOBaseCharacter::GetBaseCharacterMovementComponent() const
@@ -198,8 +231,25 @@ const AOLadderInteractiveActor* AOBaseCharacter::GetAvailableLadder() const
 	return Result;
 }
 
-void AOBaseCharacter::FillMantlingMovementParameters(FLedgeDescription LedgeDescription,
-	FMantlingMovementParameters& MantlingMovementParameters) const
+bool AOBaseCharacter::GetIsOverlapVolumeSurface() const
+{
+	return bIsOverlapVolumeSurface;
+}
+
+void AOBaseCharacter::ChangeBuoyancyFromSurfaceVolume(bool bIsOverlapVolumeSurfaceNow)
+{
+	bIsOverlapVolumeSurface = bIsOverlapVolumeSurfaceNow;
+	if (GetCharacterMovement())
+	{
+		ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
+		GetCharacterMovement()->Buoyancy = bIsOverlapVolumeSurface
+											   ? BuoyancyInWaterSurface
+											   : DefaultCharacter->GetCharacterMovement()->Buoyancy;
+	}
+}
+
+void AOBaseCharacter::FillMantlingMovementParameters(FOLedgeDescription LedgeDescription,
+	FOMantlingMovementParameters& MantlingMovementParameters) const
 {
 	MantlingMovementParameters.InitialLocation = GetActorLocation();
 	MantlingMovementParameters.InitialRotation = GetActorRotation();
@@ -233,10 +283,10 @@ void AOBaseCharacter::Mantle()
 	{
 		return;
 	}
-	FLedgeDescription LedgeDescription;
+	FOLedgeDescription LedgeDescription;
 	if (LedgeDetectorComponent->TryDetectLedge(LedgeDescription))
 	{
-		FMantlingMovementParameters MantlingMovementParameters;
+		FOMantlingMovementParameters MantlingMovementParameters;
 		FillMantlingMovementParameters(LedgeDescription, MantlingMovementParameters);
 
 		BaseCharacterMovementComponent->StartMantle(MantlingMovementParameters);
@@ -254,28 +304,6 @@ void AOBaseCharacter::Mantle()
 	}
 }
 
-void AOBaseCharacter::NextWeapon()
-{
-	WeaponComponent->NextWeapon();
-}
-
-bool AOBaseCharacter::GetIsOverlapVolumeSurface() const
-{
-	return bIsOverlapVolumeSurface;
-}
-
-void AOBaseCharacter::ChangeBuoyancyFromSurfaceVolume(bool bIsOverlapVolumeSurfaceNow)
-{
-	bIsOverlapVolumeSurface = bIsOverlapVolumeSurfaceNow;
-	if (GetCharacterMovement())
-	{
-		ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
-		GetCharacterMovement()->Buoyancy = bIsOverlapVolumeSurface
-			                                   ? BuoyancyInWaterSurface
-			                                   : DefaultCharacter->GetCharacterMovement()->Buoyancy;
-	}
-}
-
 void AOBaseCharacter::RegisterInteractiveActor(AOInteractiveActor* InterActor)
 {
 	AvailableInteractiveActors.Add(InterActor);
@@ -289,6 +317,11 @@ void AOBaseCharacter::UnregisterInteractiveActor(AOInteractiveActor* InterActor)
 const UOWeaponComponent* AOBaseCharacter::GetWeaponComponent() const
 {
 	return WeaponComponent;
+}
+
+bool AOBaseCharacter::IsWeaponInHand() const
+{
+	return WeaponComponent->GetWeaponType() != EOEquippableItemType::None;
 }
 
 void AOBaseCharacter::OnDie()

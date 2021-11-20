@@ -4,6 +4,7 @@
 #include "OLedgeDetectorComponent.h"
 
 #include "DrawDebugHelpers.h"
+#include "Characters/OPlayerCharacter.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -12,6 +13,8 @@
 #include "Origin/Subsystems/ODebugSubsystem.h"
 #include "Origin/Utils/OTraceUtils.h"
 
+
+class AOPlayerCharacter;
 
 void UOLedgeDetectorComponent::BeginPlay()
 {
@@ -22,7 +25,7 @@ void UOLedgeDetectorComponent::BeginPlay()
 }
 
 
-bool UOLedgeDetectorComponent::TryDetectLedge(FLedgeDescription& LedgeDescription)
+bool UOLedgeDetectorComponent::TryDetectLedge(FOLedgeDescription& LedgeDescription)
 {
 	if (!CachedCharacterOwner.IsValid())
 	{
@@ -70,6 +73,8 @@ bool UOLedgeDetectorComponent::TryDetectLedge(FLedgeDescription& LedgeDescriptio
 	}
 	
 	float OverlapCapsuleFloorOffset = 2.f;
+	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(CachedCharacterOwner->GetClass());
+	CapsuleHalfHeight = DefaultChar->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	FVector OverlapLocation = DownwardCheckHitResult.ImpactPoint + (CapsuleHalfHeight + OverlapCapsuleFloorOffset) * FVector::UpVector;
 
 	if (OTraceUtils::OverlapCapsuleBlockingByProfile(GetWorld(), OverlapLocation, CapsuleRadius, CapsuleHalfHeight, FQuat::Identity, CollisionProfilePawn, QueryParams, bDebugDraw, DrawTime))

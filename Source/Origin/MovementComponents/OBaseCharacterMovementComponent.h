@@ -70,7 +70,7 @@ public:
 	virtual void StopCrawl();
 	//end crawl
 
-	virtual void StartMantle(const FMantlingMovementParameters& MantlingMovementParameters);
+	virtual void StartMantle(const FOMantlingMovementParameters& MantlingMovementParameters);
 	virtual void StopMantle();
 	bool IsMantling() const;
 
@@ -113,14 +113,17 @@ protected:
 	UPROPERTY(Category="Character Movement: Ladder", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float LadderMinBottomOffset = 80;
 	UPROPERTY(Category="Character Movement: Ladder", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
-	float LadderMaxTopffset = 60;
+	float LadderMaxTopOffset = 60;
+
+	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
+	float MaxWalkWithWeaponSpeed = 60;
 private:
 	//begin additional params for spring settings
 	UPROPERTY(Transient, DuplicateTransient)
 	class AOBaseCharacter* CachedBaseCharacter;
 	//end spring settings
 
-	FMantlingMovementParameters CurrentMantlingParameters;
+	FOMantlingMovementParameters CurrentMantlingParameters;
 	FTimerHandle MantlingTimer;
 
 	UPROPERTY()

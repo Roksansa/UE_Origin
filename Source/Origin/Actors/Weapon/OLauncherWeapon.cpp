@@ -35,10 +35,8 @@ void AOLauncherWeapon::MakeShot()
 	FHitResult HitResult;
 	MakeHit(HitResult, TraceStartViewPoint, TraceEnd);
 	
-
 	const FVector EndPoint = HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd;
 	const FVector Direction = (EndPoint - GetMuzzleWorldLocation()).GetSafeNormal();
-
 	
 	const FTransform SpawnTransform(FRotator::ZeroRotator, GetMuzzleWorldLocation());
 	ACharacter* Player = Cast<ACharacter>(GetOwner());
@@ -50,4 +48,6 @@ void AOLauncherWeapon::MakeShot()
 		Projectile->FinishSpawning(SpawnTransform);
 	}
 	OnMakeShot.Broadcast();
+	DecreaseAmmo();
+	StopFire();
 }
