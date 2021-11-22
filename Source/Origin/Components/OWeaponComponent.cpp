@@ -93,19 +93,6 @@ void UOWeaponComponent::SpawnWeapons()
 
 	State = EOWeaponUseState::Idle;
 	EquipWeapon(0);
-	
-
-	// if (!CurrentWeapon)
-	// {
-	// 	return;
-	// }
-
-	// const FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, false);
-	// CurrentWeapon->AttachToComponent(Character->GetMesh(), AttachmentTransformRules, WeaponSocketName);
-	// CurrentWeapon->SetOwner(GetOwner());
-	// CurrentWeapon->SetInstigator(Character);
-	// CurrentWeapon->bComplexTrace = bComplexTrace;
-	// CurrentWeapon->OnMakeShot.AddUObject(this, &UOWeaponComponent::EndFire);
 }
 
 bool UOWeaponComponent::CanFire() const
@@ -133,7 +120,10 @@ void UOWeaponComponent::StopFire()
 	{
 		return;
 	}
-	State = EOWeaponUseState::Idle;
+	if (State == EOWeaponUseState::Fire)
+	{
+		State = EOWeaponUseState::Idle;
+	}
 	CurrentWeapon->StopFire();
 }
 
@@ -175,13 +165,43 @@ int UOWeaponComponent::GetWeaponIndex() const
 	return CurIndex;
 }
 
-void UOWeaponComponent::NextWeapon()
+bool UOWeaponComponent::IsPlayingEquipMontage()
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character)
+	{
+		UAnimInstance * AnimInstance = (Character->GetMesh())? Character->GetMesh()->GetAnimInstance() : nullptr;
+		if (AnimInstance)
+		{
+			TArray<struct FAnimMontageInstance*> Anims = AnimInstance->MontageInstances;
+			for (auto Anim : Anims)
+			{
+				if (Anim->Montage == EquipAnimMontage)
+				{
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+void UOWeaponComponent::NextWeapon(int WeaponNumber)
 {
 	if (State != EOWeaponUseState::Idle && State != EOWeaponUseState::Fire)
 	{
 		return;
 	}
-	EquipWeapon(GetWeaponIndex());
+
+	if (IsPlayingEquipMontage()) return;
+	
+	CurrentIndex = GetWeaponIndex();
+
+	if (WeaponNumber > 0 && WeaponNumber <= ArmoryWeapons.Num())
+	{
+		CurrentIndex = WeaponNumber - 1;
+	}
+	EquipWeapon(CurrentIndex);
 }
 
 bool UOWeaponComponent::AddAmmo(const EOAmmoType& Type, int32 Count)
@@ -235,7 +255,11 @@ void UOWeaponComponent::EquipWeapon(int WeaponIndex)
 	State = EOWeaponUseState::Equip;
 	if (CurrentWeapon || ArmoryWeapons[WeaponIndex])
 	{
-		PlayAnimMontage(EquipAnimMontage);
+		const float Duration = PlayAnimMontage(EquipAnimMontage);
+		if (Duration > 0.f)
+		{
+			AddEventForMontageEnded();
+		}
 	}
 	else
 	{
@@ -341,6 +365,7 @@ void UOWeaponComponent::Reload()
 	}
 	else
 	{
+		AddEventForMontageEnded();
 		GetWorld()->GetTimerManager().SetTimer(ReloadTimerHandle, [this]() { OnFinishReload(-1, false); }, Duration, false);
 	}
 }
@@ -372,19 +397,6 @@ float UOWeaponComponent::PlayAnimMontage(UAnimMontage* AnimMontage) const
 
 void UOWeaponComponent::InitAnimation()
 {
-	if (!EquipAnimMontage)
-	{
-		return;
-	}
-	const TArray<FAnimNotifyEvent> NotifyEvents = EquipAnimMontage->Notifies;
-	for (const FAnimNotifyEvent& NotifyEvent : NotifyEvents)
-	{
-		UAnimNotify_OFinishEquip* EquipFinishNotify = Cast<UAnimNotify_OFinishEquip>(NotifyEvent.Notify);
-		if (EquipFinishNotify)
-		{
-			
-		}
-	}
 }
 
 void UOWeaponComponent::OnFinishEquip(bool bIsOldWeapon)
@@ -400,7 +412,7 @@ void UOWeaponComponent::OnFinishEquip(bool bIsOldWeapon)
 		return;
 	}
 	AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), ArmoryEquipSocketName);
-	CurrentWeapon = ArmoryWeapons[GetWeaponIndex()];
+	CurrentWeapon = ArmoryWeapons[CurrentIndex];
 	AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), WeaponSocketName);
 }
 
@@ -421,5 +433,59 @@ void UOWeaponComponent::OnAllowFire(bool bAllowFire)
 	if (!bAllowFire && State == EOWeaponUseState::Fire && CurrentWeapon && CurrentWeapon->IsFullAuto())
 	{
 		StopFire();
+	}
+}
+
+void UOWeaponComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	if (Montage == EquipAnimMontage)
+	{
+		if (bInterrupted)
+		{
+			CurrentIndex = GetWeaponIndex();
+			if (State == EOWeaponUseState::Equip)
+			{
+				State = EOWeaponUseState::Idle;
+			}
+		}
+		RemoveEventForMontageEnded();
+	}
+	if (Montage == GetWeaponAnimDescription().ReloadAnimMontage)
+	{
+		if (bInterrupted)
+		{
+			if (State == EOWeaponUseState::Reload)
+			{
+				State = EOWeaponUseState::Idle;
+			}
+			GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+		}
+		RemoveEventForMontageEnded();
+	}
+}
+
+void UOWeaponComponent::AddEventForMontageEnded()
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character)
+	{
+		UAnimInstance * AnimInstance = (Character->GetMesh())? Character->GetMesh()->GetAnimInstance() : nullptr; 
+		if(AnimInstance)
+		{
+			AnimInstance->OnMontageEnded.AddUniqueDynamic(this, &UOWeaponComponent::OnMontageEnded);
+		}
+	}
+}
+
+void UOWeaponComponent::RemoveEventForMontageEnded()
+{
+	ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (Character)
+	{
+		UAnimInstance * AnimInstance = (Character->GetMesh())? Character->GetMesh()->GetAnimInstance() : nullptr; 
+		if(AnimInstance)
+		{
+			AnimInstance->OnMontageEnded.RemoveDynamic(this, &UOWeaponComponent::OnMontageEnded);
+		}
 	}
 }

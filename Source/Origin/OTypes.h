@@ -23,6 +23,7 @@ const FName ArmoryEquipSocketName = FName("ArmorySocket");
 const FName SectionMontageStartBulletReload = FName("StartBulletReload");
 
 const FName WeaponFireActionName = FName("Fire");
+const FName NextWeaponIndexActionName = FName("NextWeaponIndex");
 
 UENUM(BlueprintType)
 enum class EOEquippableItemType : uint8

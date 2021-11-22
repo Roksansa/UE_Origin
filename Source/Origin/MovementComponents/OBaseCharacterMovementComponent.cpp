@@ -3,8 +3,7 @@
 
 #include "OBaseCharacterMovementComponent.h"
 
-
-#include "Characters/OPlayerCharacter.h"
+#include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
 #include "Curves/CurveVector.h"
 #include "GameFramework/Character.h"
@@ -181,10 +180,6 @@ float UOBaseCharacterMovementComponent::GetMaxSpeed() const
 {
 	if (MovementMode == MOVE_Walking || MovementMode == MOVE_NavWalking)
 	{
-		if (CachedBaseCharacter && CachedBaseCharacter->IsWeaponInHand())
-		{
-			return MaxWalkWithWeaponSpeed;
-		}
 		if (IsCrouching())
 		{
 			return IsSprinting() ? SprintingMaxSpeedCrouch : MaxWalkSpeedCrouched;
@@ -197,7 +192,15 @@ float UOBaseCharacterMovementComponent::GetMaxSpeed() const
 		{
 			return MaxCrawlSpeed;
 		}
-		return IsSprinting() ? SprintingMaxSpeedWalking : MaxWalkSpeed;
+		if (IsSprinting())
+		{
+			return SprintingMaxSpeedWalking;
+		}
+		if (CachedBaseCharacter && CachedBaseCharacter->IsWeaponInHand())
+		{
+			return MaxWalkWithWeaponSpeed;
+		}
+		return MaxWalkSpeed;
 	}
 	if (MovementMode == MOVE_Swimming)
 	{
@@ -377,24 +380,28 @@ bool UOBaseCharacterMovementComponent::IsMantling() const
 
 void UOBaseCharacterMovementComponent::AttachLadder(const AOLadderInteractiveActor* Ladder)
 {
-	if (IsValid(CachedBaseCharacter))
-	{
-		CachedBaseCharacter->bUseControllerRotationYaw = false;
-	}
+	SetMovementMode(EMovementMode::MOVE_Custom, (uint8)ECustomMovementMode::CMOVE_ClimbLadder);
 	CurrentLadder = Ladder;
 	bCrossLadderMinBottomOffset = false;
-	FRotator TargetOrientationRotation = CurrentLadder->GetActorRotation();
+	const FRotator TargetOrientationRotation = CurrentLadder->GetActorRotation();
+
+	FRotator Temp = GetOwner()->GetActorRotation();
+	GetOwner()->SetActorRotation(TargetOrientationRotation, ETeleportType::TeleportPhysics);
+	GetOwner()->AddActorLocalRotation(FRotator(0.f, 180, 0.f),false, nullptr, ETeleportType::TeleportPhysics);
+
+	
 	GEngine->AddOnScreenDebugMessage(66, 10.0f, FColor::Yellow, FString::Format(TEXT(" IK loc {0} --- {1} -- {2} "), {TargetOrientationRotation.ToString(), CurrentLadder->GetActorForwardVector().ToOrientationRotator().ToString(), GetOwner()->GetActorForwardVector().ToOrientationRotator().ToString()}), true);
 	const FVector LadderUpVector = CurrentLadder->GetActorUpVector();
 	const FVector LadderForwardVector = CurrentLadder->GetActorForwardVector();
-
 	const FVector NewLocation = CurrentLadder->GetActorLocation() + GetProjectionFromActorToLadder(GetActorLocation()) * LadderUpVector + LadderToCharacterOffset * LadderForwardVector;
-	
 	GetOwner()->SetActorLocation(NewLocation);
-	GetOwner()->SetActorRotation(TargetOrientationRotation);
-	GetOwner()->AddActorLocalRotation(FRotator(0.f, 180, 0.f));
+	
+	ToLadderRotator = CachedBaseCharacter->GetCapsuleComponent()->GetComponentRotation();
+	GetOwner()->SetActorRotation(Temp);
+	bRotateToLadder = true;
+	CachedBaseCharacter->bUseControllerRotationYaw = false;
 
-	SetMovementMode(EMovementMode::MOVE_Custom, (uint8)ECustomMovementMode::CMOVE_ClimbLadder);
+	GEngine->AddOnScreenDebugMessage(66, 10.0f, FColor::Yellow, FString::Format(TEXT(" !!!!! {0} --- "), {ToLadderRotator.ToString()}), true);
 }
 
 float UOBaseCharacterMovementComponent::GetProjectionFromActorToLadder(const FVector& CurrentLocation) const
@@ -410,11 +417,6 @@ float UOBaseCharacterMovementComponent::GetProjectionFromActorToLadder(const FVe
 
 void UOBaseCharacterMovementComponent::DetachFromLadder(bool bWithJump)
 {
-	if (IsValid(CachedBaseCharacter))
-	{
-		CachedBaseCharacter->bUseControllerRotationYaw = true;
-	}
-	CurrentLadder = nullptr;
 	SetMovementMode(bWithJump ? EMovementMode::MOVE_Falling : EMovementMode::MOVE_Walking);
 }
 
@@ -428,12 +430,59 @@ bool UOBaseCharacterMovementComponent::ShouldRemainVertical() const
 	return Super::ShouldRemainVertical() || (CachedBaseCharacter && CachedBaseCharacter->GetIsOverlapVolumeSurface());
 }
 
+void UOBaseCharacterMovementComponent::BaseCharacterOnLadderPhysRotation(float DeltaTime)
+{
+	if(bRotateToLadder)
+	{
+		const FRotator DeltaRot = GetDeltaRotation(DeltaTime);
+		DeltaRot.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): GetDeltaRotation"));
+
+		// Accumulate a desired new rotation.
+		const float AngleTolerance = 1e-3f;
+
+		const FRotator CurrentRotation = GetOwner()->GetActorRotation();
+		if (!CurrentRotation.Equals(ToLadderRotator, AngleTolerance))
+		{
+			FRotator DesiredRotation = ToLadderRotator;
+			//PITCH
+			if (!FMath::IsNearlyEqual(CurrentRotation.Pitch, DesiredRotation.Pitch, AngleTolerance))
+			{
+				DesiredRotation.Pitch = FMath::FixedTurn(CurrentRotation.Pitch, DesiredRotation.Pitch, DeltaRot.Pitch);
+			}else if (!FMath::IsNearlyEqual(CurrentRotation.Yaw, DesiredRotation.Yaw, AngleTolerance))
+			{
+				DesiredRotation.Yaw = FMath::FixedTurn(CurrentRotation.Yaw, DesiredRotation.Yaw, DeltaRot.Yaw);
+			}
+			else if (!FMath::IsNearlyEqual(CurrentRotation.Roll, DesiredRotation.Roll, AngleTolerance))
+			{
+				DesiredRotation.Roll = FMath::FixedTurn(CurrentRotation.Roll, DesiredRotation.Roll, DeltaRot.Roll);
+			}
+			// Set the new rotation.
+			DesiredRotation.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): DesiredRotation"));
+			const FQuat DesiredRotationInQuat = DesiredRotation.Quaternion();
+			GetOwner()->SetActorRotation(DesiredRotationInQuat, ETeleportType::TeleportPhysics);
+			CachedBaseCharacter->Controller->SetControlRotation(DesiredRotation);
+		}
+		else
+		{
+			CachedBaseCharacter->Controller->SetControlRotation(ToLadderRotator);
+			CachedBaseCharacter->bUseControllerRotationYaw = true;
+			bRotateToLadder = false;
+		}
+	}
+	return;
+}
+
 void UOBaseCharacterMovementComponent::PhysicsRotation(float DeltaTime)
 {
-	if (IsClimbingLadder())
+	if (!HasValidData() || (!CharacterOwner->Controller && !bRunPhysicsWithNoController))
 	{
 		return;
 	}
+	if (!(bOrientRotationToMovement || bUseControllerDesiredRotation) || IsClimbingLadder())
+	{
+		BaseCharacterOnLadderPhysRotation(DeltaTime);
+	}
+	
 	Super::PhysicsRotation(DeltaTime);
 }
 
@@ -469,7 +518,18 @@ void UOBaseCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previ
 		{
 			case (uint8)ECustomMovementMode::CMOVE_ClimbLadder:
 			{
-				GetOwner()->SetActorRotation(FRotator(0, GetOwner()->GetActorRotation().Yaw, 0));
+				CurrentLadder = nullptr;
+				ToLadderRotator = FRotator(0, GetOwner()->GetActorRotation().Yaw, 0);
+				CachedBaseCharacter->bUseControllerRotationYaw = false;
+				bRotateToLadder = true;
+				if (MovementMode == MOVE_Custom && CustomMovementMode == (uint8)ECustomMovementMode::CMOVE_Mantling)
+				{
+					GetOwner()->SetActorRotation(ToLadderRotator);
+					CachedBaseCharacter->Controller->SetControlRotation(ToLadderRotator);
+					bRotateToLadder = false;
+					CachedBaseCharacter->bUseControllerRotationYaw = true;
+				}
+
 				break;
 			}
 
@@ -496,6 +556,15 @@ void UOBaseCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previ
 			}
 		}
 	}
+}
+
+void UOBaseCharacterMovementComponent::SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode)
+{
+	if (NewMovementMode == MOVE_Swimming && MovementMode == EMovementMode::MOVE_Custom && CustomMovementMode == (uint8)ECustomMovementMode::CMOVE_Mantling)
+	{
+		return;
+	}
+	Super::SetMovementMode(NewMovementMode, NewCustomMode);
 }
 
 void UOBaseCharacterMovementComponent::PhysCustom(float DeltaTime, int32 Iterations)
@@ -543,7 +612,7 @@ void UOBaseCharacterMovementComponent::Crouch(bool bClientSimulation)
 {
 	Super::Crouch(bClientSimulation);
 }
-
+DEFINE_LOG_CATEGORY_STATIC(LogRifleWeapon, All, All);
 void UOBaseCharacterMovementComponent::PhysMantling(float DeltaTime, int32 Iterations)
 {
 	const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MantlingTimer) + CurrentMantlingParameters.StartTime;
@@ -558,18 +627,29 @@ void UOBaseCharacterMovementComponent::PhysMantling(float DeltaTime, int32 Itera
 	const FVector NewLocation = FMath::Lerp(CorrectorInitialLocation, CurrentMantlingParameters.TargetLocation, PositionAlpha);
 	const FRotator NewRotation = FMath::Lerp(CurrentMantlingParameters.InitialRotation, CurrentMantlingParameters.TargetRotation, PositionAlpha);
 
+	
 	const FVector Delta = NewLocation - GetActorLocation();
-
 	FHitResult Hit;
-	SafeMoveUpdatedComponent(Delta, NewRotation, false, Hit);
+	CachedBaseCharacter->Controller->SetControlRotation(NewRotation);
+	FString Str = FString::Format(TEXT(" Mantle new {0} current {1}  delta {2} rotation {3}"),{NewLocation.ToString() , GetActorLocation().ToString(),  Delta.ToString(), GetOwner()->GetActorRotation().ToString()});
+	//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, FString::Format(TEXT(" Mantle new {0} current {1}  delta {2} "), {NewLocation.ToString() , GetActorLocation().ToString(),  Delta.ToString()}));
+	UE_LOG(LogRifleWeapon, Display, TEXT( "%s" ), *(Str));
+	MoveUpdatedComponent(Delta, NewRotation, false, &Hit);
+	if (Hit.bBlockingHit)
+	{
+		DrawDebugPoint(GetWorld(), Hit.ImpactPoint, 20.f, FColor::Emerald, false, 2);
+	}
 }
 
 void UOBaseCharacterMovementComponent::PhysClimbLadder(float DeltaTime, int32 Iterations)
 {
 	CalcVelocity(DeltaTime, 1.f, false, ClimbingLadderBrakingDeceleration);
-	const FVector Delta = Velocity * DeltaTime;
+	FVector Delta = Velocity * DeltaTime;
 
-	const FVector NewLocation = GetActorLocation() + Delta;
+	const FVector LadderUpVector = CurrentLadder->GetActorUpVector();
+	const FVector LadderForwardVector = CurrentLadder->GetActorForwardVector();
+	
+	const FVector NewLocation = CurrentLadder->GetActorLocation() + GetProjectionFromActorToLadder(GetActorLocation()) * LadderUpVector + LadderToCharacterOffset * LadderForwardVector + Delta;
 	float NewPosProjection = GetProjectionFromActorToLadder(NewLocation);
 
 	if (!bCrossLadderMinBottomOffset && NewPosProjection > LadderMinBottomOffset)
@@ -578,19 +658,24 @@ void UOBaseCharacterMovementComponent::PhysClimbLadder(float DeltaTime, int32 It
 	}
 	if (bCrossLadderMinBottomOffset && NewPosProjection < LadderMinBottomOffset)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, FString::Format(TEXT(" Ladder Detach {0} {1} {2} "), {NewPosProjection , NewPosProjection + NewLocation.Z,  CurrentLadder->GetActorLocation().Z + LadderMinBottomOffset}));
+		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, FString::Format(TEXT(" Ladder Detach {0} {1} {2} "), {NewPosProjection , NewPosProjection + NewLocation.Z,  CurrentLadder->GetActorLocation().Z + LadderMinBottomOffset}));
 		DetachFromLadder(false);
 		return;
 	}
 	if (NewPosProjection > CurrentLadder->GetHeight() - LadderMaxTopOffset)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Purple, FString::Format(TEXT(" Ladder !!! {0} { 1} {2} "), {NewPosProjection + NewLocation.Z , CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight(),  CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight() - LadderMaxTopOffset}));
+		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Purple, FString::Format(TEXT(" Ladder !!! {0} { 1} {2} "), {NewPosProjection + NewLocation.Z , CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight(),  CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight() - LadderMaxTopOffset}));
 		CachedBaseCharacter->Mantle();
 		return;
 	}
-	
+	Delta = NewLocation - GetActorLocation();
 	FHitResult Hit;
 	SafeMoveUpdatedComponent(Delta, GetOwner()->GetActorRotation(), true, Hit);
+	if (Hit.bBlockingHit)
+	{
+		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Format(TEXT(" Ladder  block!!! {0} "), {NewPosProjection + NewLocation.Z}));
+		CachedBaseCharacter->Mantle();
+	}
 }
 
 const AOLadderInteractiveActor* UOBaseCharacterMovementComponent::GetCurrentLadder() const

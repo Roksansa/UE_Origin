@@ -73,7 +73,12 @@ public:
 	FOWeaponAnimDescription GetWeaponAnimDescription() const;
 	EOEquippableItemType GetWeaponType() const;
 	int GetWeaponIndex() const;
-	void NextWeapon();
+	bool IsPlayingEquipMontage();
+	/**
+	 * WeaponNumber - correct start number 1.
+	 * if  weaponNumber = 1 than weapon index = 0
+	 */
+	void NextWeapon(int WeaponNumber = 0);
 	
 	bool AddAmmo(const EOAmmoType& Type, int32 Count);
 	void ReloadAmmo();
@@ -116,6 +121,7 @@ private:
 
 	TArray<FOAmmoDescription, TInlineAllocator<AmmoCount>> CurrentAmmo;
 	FTimerHandle ReloadTimerHandle;
+	int CurrentIndex = 0;
 	
 	void InitAmmo();
 	void SpawnWeapons();
@@ -145,4 +151,9 @@ private:
 
 	UFUNCTION()
 	void OnAllowFire(bool bAllowFire);
+	UFUNCTION()
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	
+	void AddEventForMontageEnded();
+	void RemoveEventForMontageEnded();
 };

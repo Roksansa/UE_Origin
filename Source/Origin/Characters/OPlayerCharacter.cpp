@@ -34,33 +34,22 @@ AOPlayerCharacter::AOPlayerCharacter()
 void AOPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	FTimerHandle CheckFireTimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(CheckFireTimerHandle, [this]()
-	{
-		const bool bAllowFire = CanUseWeapon();
-
-		if (bAllowFire && bWantFire && WeaponComponent->GetState() == EOWeaponUseState::Idle)
-		{
-			OnAllowFire.Broadcast(bAllowFire);
-			return;
-		}
-
-		if (!bAllowFire && WeaponComponent->GetState() == EOWeaponUseState::Fire)
-		{
-			OnAllowFire.Broadcast(bAllowFire);
-		}
-	}, 0.5f, true);
 }
 
 void AOPlayerCharacter::LookUp(float Value)
 {
-	AddControllerPitchInput(Value);
+	if (!FMath::IsNearlyZero(Value, 1E-06f) && !BaseCharacterMovementComponent->IsClimbingLadder())
+	{
+		AddControllerPitchInput(Value);
+	}
 }
 
 void AOPlayerCharacter::Turn(float Value)
 {
-	AddControllerYawInput(Value);
+	if (!FMath::IsNearlyZero(Value, 1E-06f) && !BaseCharacterMovementComponent->IsClimbingLadder())
+	{
+		AddControllerYawInput(Value);
+	}
 }
 
 void AOPlayerCharacter::MoveRight(float Value)
@@ -85,7 +74,7 @@ void AOPlayerCharacter::MoveForward(float Value)
 
 void AOPlayerCharacter::TurnAtRate(float Value)
 {
-	if (!FMath::IsNearlyZero(Value, 1E-06f))
+	if (!FMath::IsNearlyZero(Value, 1E-06f) && !BaseCharacterMovementComponent->IsClimbingLadder())
 	{
 		AddControllerYawInput(Value * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 	}
@@ -273,36 +262,36 @@ void AOPlayerCharacter::ClimbLadder(float Value)
 	}
 }
 
-void AOPlayerCharacter::InteractionWithLadder()
-{
-	if (BaseCharacterMovementComponent->IsClimbingLadder())
-	{
-		BaseCharacterMovementComponent->DetachFromLadder(true);
-	}
-	else
-	{
-		const AOLadderInteractiveActor* Ladder = GetAvailableLadder();
-		if (!IsValid(Ladder))
-		{
-			return;
-		}
-		BaseCharacterMovementComponent->AttachLadder(Ladder);
-	}
-}
-
 void AOPlayerCharacter::StartFire()
 {
 	Super::StartFire();
-	if (!CanUseWeapon())
+	if (WeaponComponent->GetWeaponType() == EOEquippableItemType::None || !CanUseWeapon())
 	{
 		return;
 	}
 	bWantFire = true;
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(CheckFireTimerHandle, [this]()
+	{
+		const bool bAllowFire = CanUseWeapon();
+
+		if (bAllowFire && bWantFire && WeaponComponent->GetState() == EOWeaponUseState::Idle)
+		{
+			OnAllowFire.Broadcast(bAllowFire);
+			return;
+		}
+
+		if (!bAllowFire && WeaponComponent->GetState() == EOWeaponUseState::Fire)
+		{
+			OnAllowFire.Broadcast(bAllowFire);
+		}
+	}, 0.5f, true);
 }
 
 void AOPlayerCharacter::StopFire()
 {
 	Super::StopFire();
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
 	bWantFire = false;
 }
 

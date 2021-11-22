@@ -3,6 +3,7 @@
 
 #include "OPlayerController.h"
 
+#include "OTypes.h"
 #include "GameFramework/PlayerInput.h"
 #include "Origin/Characters/OBaseCharacter.h"
 #include "Origin/Characters/OPlayerCharacter.h"
@@ -33,6 +34,20 @@ bool AOPlayerController::IsPressedAnyKeyForAction(const FName ActionName) const
 	return bIsPressed;
 }
 
+bool AOPlayerController::FirstPressedKeyForAction(const FName ActionName, FText& OutKeyName) const
+{
+	const TArray<FInputActionKeyMapping>& ArrayKeys = PlayerInput->GetKeysForAction(ActionName);
+	for (const auto ActionKey : ArrayKeys)
+	{
+		if (IsInputKeyDown(ActionKey.Key))
+		{
+			OutKeyName = ActionKey.Key.GetDisplayName();
+			return true;
+		}
+	}
+	return false;
+}
+
 void AOPlayerController::SetupInputComponent()
 {
     Super::SetupInputComponent();
@@ -45,17 +60,18 @@ void AOPlayerController::SetupInputComponent()
     InputComponent->BindAxis("SwimRight", this, &AOPlayerController::MoveSwimRight);
     InputComponent->BindAxis("SwimUp", this, &AOPlayerController::MoveSwimUp);
     InputComponent->BindAxis("SwimForward", this, &AOPlayerController::MoveSwimForward);
-    InputComponent->BindAxis("ClimbLadder", this, &AOPlayerController::ClimbLadder);
-    InputComponent->BindAction("InteractionWithLadder", EInputEvent::IE_Pressed, this, &AOPlayerController::InteractionWithLadder);
-    InputComponent->BindAction("Mantle", EInputEvent::IE_Pressed, this, &AOPlayerController::Mantle);
     InputComponent->BindAction("Jump", EInputEvent::IE_Pressed, this, &AOPlayerController::Jump);
     InputComponent->BindAction("Crawl", EInputEvent::IE_Pressed, this, &AOPlayerController::ChangeCrawlState);
     InputComponent->BindAction("Crouch", EInputEvent::IE_Pressed, this, &AOPlayerController::ChangeCrouchState);
     InputComponent->BindAction<FChangeSprint>("Sprint", EInputEvent::IE_Pressed, this, &AOPlayerController::ChangeSprint, true);
     InputComponent->BindAction<FChangeSprint>("Sprint", EInputEvent::IE_Released, this, &AOPlayerController::ChangeSprint, false);
+	InputComponent->BindAxis("ClimbLadder", this, &AOPlayerController::ClimbLadder);
+	InputComponent->BindAction("Mantle", EInputEvent::IE_Pressed, this, &AOPlayerController::Mantle);
+	InputComponent->BindAction("InteractionWithLadder", EInputEvent::IE_Pressed, this, &AOPlayerController::InteractionWithLadder);
 	InputComponent->BindAction("Fire", EInputEvent::IE_Pressed, this, &AOPlayerController::StartFireWithWeapon);
 	InputComponent->BindAction("Fire", EInputEvent::IE_Released, this, &AOPlayerController::StopFire);
 	InputComponent->BindAction("NextWeapon", EInputEvent::IE_Pressed, this, &AOPlayerController::NextWeapon);
+	InputComponent->BindAction("NextWeaponIndex", EInputEvent::IE_Pressed, this, &AOPlayerController::NextWeaponIndex);
 	InputComponent->BindAction("ReloadAmmo", EInputEvent::IE_Pressed, this, &AOPlayerController::ReloadAmmo);
 }
 
@@ -217,5 +233,22 @@ void AOPlayerController::ReloadAmmo()
 	if (CachedBaseCharacter.IsValid())
 	{
 		CachedBaseCharacter->ReloadAmmo();
+	}
+}
+
+void AOPlayerController::NextWeaponIndex()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		FText KeyName;
+		if (FirstPressedKeyForAction(NextWeaponIndexActionName, KeyName))
+		{
+			FString KeyNameString = KeyName.ToString();
+			if (KeyNameString.IsNumeric())
+			{
+				int32 NumberKey = FCString::Atoi(*KeyNameString);
+				CachedBaseCharacter->NextWeaponIndex(NumberKey);
+			}
+		}
 	}
 }

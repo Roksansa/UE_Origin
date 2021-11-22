@@ -116,6 +116,37 @@ bool AOBaseCharacter::CanUseWeapon() const
 	return true;
 }
 
+void AOBaseCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	if (BaseCharacterMovementComponent->MovementMode == MOVE_Swimming)
+	{
+		WeaponComponent->NextWeapon(1);
+	}
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+}
+
+void AOBaseCharacter::InteractionWithLadder()
+{
+	if(BaseCharacterMovementComponent->IsMantling())
+	{
+		return;
+	}
+	
+	if (BaseCharacterMovementComponent->IsClimbingLadder())
+	{
+		BaseCharacterMovementComponent->DetachFromLadder(true);
+	}
+	else
+	{
+		const AOLadderInteractiveActor* Ladder = GetAvailableLadder();
+		if (!IsValid(Ladder))
+		{
+			return;
+		}
+		BaseCharacterMovementComponent->AttachLadder(Ladder);
+	}
+}
+
 void AOBaseCharacter::StartFire()
 {
 	if (!CanUseWeapon())
@@ -146,6 +177,15 @@ void AOBaseCharacter::NextWeapon()
 		return;
 	}
 	WeaponComponent->NextWeapon();
+}
+
+void AOBaseCharacter::NextWeaponIndex(int32 NumberWeapon)
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->NextWeapon(NumberWeapon);
 }
 
 UOBaseCharacterMovementComponent* AOBaseCharacter::GetBaseCharacterMovementComponent() const
@@ -252,7 +292,9 @@ void AOBaseCharacter::FillMantlingMovementParameters(FOLedgeDescription LedgeDes
 	FOMantlingMovementParameters& MantlingMovementParameters) const
 {
 	MantlingMovementParameters.InitialLocation = GetActorLocation();
-	MantlingMovementParameters.InitialRotation = GetActorRotation();
+	MantlingMovementParameters.InitialRotation = BaseCharacterMovementComponent->IsClimbingLadder()
+		                                             ? FRotator(0, LedgeDescription.Rotation.Yaw, 0)
+		                                             : GetActorRotation();
 	MantlingMovementParameters.TargetLocation = LedgeDescription.Location;
 	MantlingMovementParameters.TargetRotation = LedgeDescription.Rotation;
 

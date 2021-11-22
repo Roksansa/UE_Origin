@@ -32,7 +32,7 @@ public:
 	virtual void MoveForward(float Value) {}
 
 	virtual void TurnAtRate(float Value) {}
-	virtual void LookUpAtRate(float Value) {};
+	virtual void LookUpAtRate(float Value) {}
 
 	virtual void ChangeCrouchState();
 	virtual void ChangeCrawlState();
@@ -43,14 +43,17 @@ public:
 	virtual void MoveSwimForward(float Value, float LastSwimUpValue) {};
 	virtual void MoveSwimUp(float Value) {};
 	
-	virtual void InteractionWithLadder(){};
+	virtual void InteractionWithLadder();;
 	virtual void ClimbLadder(float Value) {};
 	
 	virtual void StartFire();
 	virtual void StopFire();
 	virtual void ReloadAmmo();
 	virtual void NextWeapon();
+	virtual void NextWeaponIndex(int32 NumberWeapon);
 	bool CanUseWeapon() const;
+
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 	
 	UOBaseCharacterMovementComponent* GetBaseCharacterMovementComponent() const;
 

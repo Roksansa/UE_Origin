@@ -42,7 +42,6 @@ public:
 	virtual void OnEndSwimming(float HalfHeightAdjust, float ScaledHeightAdjust) override;
 
 	virtual void ClimbLadder(float Value) override;
-	virtual void InteractionWithLadder() override;
 
 	virtual void StartFire() override;
 	virtual void StopFire() override;
@@ -70,4 +69,5 @@ protected:
 
 private:
 	bool bWantFire = false;
+	FTimerHandle CheckFireTimerHandle;
 };

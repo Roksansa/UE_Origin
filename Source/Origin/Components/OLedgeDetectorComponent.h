@@ -44,4 +44,7 @@ protected:
 
 private:
 	TWeakObjectPtr<class ACharacter> CachedCharacterOwner;
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	class UODebugSubsystem* DebugSubsystem = nullptr;
+#endif
 };

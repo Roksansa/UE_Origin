@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Origin/Characters/Settings/OMantlingSettings.h"
-#include "Origin/Components/OLedgeDetectorComponent.h"
 #include "OBaseCharacterMovementComponent.generated.h"
 
 UENUM()
@@ -89,9 +88,11 @@ protected:
 	float CrawlingHalfHeight = 20.f;
 
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
+	virtual void SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode = 0) override;
 	virtual void PhysCustom(float DeltaTime, int32 Iterations) override;
 	virtual void PhysMantling(float DeltaTime, int32 Iterations);
 	virtual void PhysClimbLadder(float DeltaTime, int32 Iterations);
+	void BaseCharacterOnLadderPhysRotation(float DeltaTime);
 	
 	UPROPERTY(Category="Character Movement: Swimming", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float SwimmingCapsuleHalfSize = 50.f;
@@ -114,7 +115,9 @@ protected:
 	float LadderMinBottomOffset = 80;
 	UPROPERTY(Category="Character Movement: Ladder", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float LadderMaxTopOffset = 60;
-
+	UPROPERTY(Category="Character Movement: Ladder", VisibleAnywhere, BlueprintReadOnly)
+	FRotator ToLadderRotator = FRotator::ZeroRotator;
+	
 	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float MaxWalkWithWeaponSpeed = 60;
 private:
@@ -129,4 +132,7 @@ private:
 	UPROPERTY()
 	const class AOLadderInteractiveActor* CurrentLadder = nullptr;
 	bool bCrossLadderMinBottomOffset = false;
+	FVector ActorPositionOnLadderWorldSpace = FVector::ZeroVector;
+
+	bool bRotateToLadder = false;
 };
