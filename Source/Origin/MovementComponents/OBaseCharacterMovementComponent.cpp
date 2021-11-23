@@ -612,12 +612,13 @@ void UOBaseCharacterMovementComponent::Crouch(bool bClientSimulation)
 {
 	Super::Crouch(bClientSimulation);
 }
-DEFINE_LOG_CATEGORY_STATIC(LogRifleWeapon, All, All);
+
 void UOBaseCharacterMovementComponent::PhysMantling(float DeltaTime, int32 Iterations)
 {
 	const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MantlingTimer) + CurrentMantlingParameters.StartTime;
 	const FVector MantlingCurveVector = CurrentMantlingParameters.MantlingCurve->GetVectorValue(ElapsedTime);
 	const float PositionAlpha = MantlingCurveVector.X;
+	const float RotationAlpha = FMath::Clamp(MantlingCurveVector.X * 4, 0.f , 1.f);
 	const float XYCorrectionAlpha = MantlingCurveVector.Y;
 	const float ZCorrectionAlpha = MantlingCurveVector.Z;
 
@@ -625,15 +626,13 @@ void UOBaseCharacterMovementComponent::PhysMantling(float DeltaTime, int32 Itera
 	CorrectorInitialLocation.Z = FMath::Lerp(CurrentMantlingParameters.InitialLocation.Z, CurrentMantlingParameters.InitialAnimationLocation.Z, ZCorrectionAlpha);
 
 	const FVector NewLocation = FMath::Lerp(CorrectorInitialLocation, CurrentMantlingParameters.TargetLocation, PositionAlpha);
-	const FRotator NewRotation = FMath::Lerp(CurrentMantlingParameters.InitialRotation, CurrentMantlingParameters.TargetRotation, PositionAlpha);
+	
+	const FRotator NewRotation = FMath::Lerp(CurrentMantlingParameters.InitialRotation, CurrentMantlingParameters.TargetRotation, RotationAlpha);
 
 	
 	const FVector Delta = NewLocation - GetActorLocation();
 	FHitResult Hit;
 	CachedBaseCharacter->Controller->SetControlRotation(NewRotation);
-	FString Str = FString::Format(TEXT(" Mantle new {0} current {1}  delta {2} rotation {3}"),{NewLocation.ToString() , GetActorLocation().ToString(),  Delta.ToString(), GetOwner()->GetActorRotation().ToString()});
-	//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, FString::Format(TEXT(" Mantle new {0} current {1}  delta {2} "), {NewLocation.ToString() , GetActorLocation().ToString(),  Delta.ToString()}));
-	UE_LOG(LogRifleWeapon, Display, TEXT( "%s" ), *(Str));
 	MoveUpdatedComponent(Delta, NewRotation, false, &Hit);
 	if (Hit.bBlockingHit)
 	{
@@ -671,7 +670,7 @@ void UOBaseCharacterMovementComponent::PhysClimbLadder(float DeltaTime, int32 It
 	Delta = NewLocation - GetActorLocation();
 	FHitResult Hit;
 	SafeMoveUpdatedComponent(Delta, GetOwner()->GetActorRotation(), true, Hit);
-	if (Hit.bBlockingHit)
+	if (Hit.bBlockingHit && FVector::DotProduct(Delta.GetSafeNormal(), LadderUpVector) == 1.f)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Format(TEXT(" Ladder  block!!! {0} "), {NewPosProjection + NewLocation.Z}));
 		CachedBaseCharacter->Mantle();

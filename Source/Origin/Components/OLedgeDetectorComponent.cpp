@@ -38,7 +38,7 @@ bool UOLedgeDetectorComponent::TryDetectLedge(FOLedgeDescription& LedgeDescripti
 	const float BottomOffsetZ = 2.f;
 	const ACharacter* DefaultChar = GetDefault<ACharacter>(CachedCharacterOwner->GetClass());
 	float CapsuleHalfHeight = CapsuleComponent->GetScaledCapsuleHalfHeight();
-	float CapsuleRadius = DefaultChar->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	float CapsuleRadius = DefaultChar->GetCapsuleComponent()->GetScaledCapsuleRadius() - 0.5f;
 	FVector Location = CachedCharacterOwner->GetActorLocation();
 	FVector CharacterBottom = Location - (CapsuleHalfHeight - BottomOffsetZ) * CachedCharacterOwner->GetActorUpVector();
 
@@ -98,20 +98,15 @@ bool UOLedgeDetectorComponent::TryDetectLedge(FOLedgeDescription& LedgeDescripti
 	float CheckCapsuleHalfHeight = (DownwardCheckHitResult.ImpactPoint.Z - ForwardCheckHitResult.ImpactPoint.Z) * 0.7f;
 	FVector CheckLocation = ForwardCheckHitResult.ImpactPoint - (OffsetX + OffsetFromWall * FMath::Sign(OffsetX))*FVector::ForwardVector * CoefCapsuleSize - (OffsetY + OffsetFromWall * FMath::Sign(OffsetY))*FVector::RightVector * CoefCapsuleSize  + (CheckCapsuleHalfHeight) * FVector::UpVector;
 
-	if (OTraceUtils::OverlapCapsuleBlockingByProfile(GetWorld(), CheckLocation, CapsuleRadius * CoefCapsuleSize, CheckCapsuleHalfHeight, FQuat::Identity, CollisionProfilePawn, QueryParams, bDebugDraw, DrawTime))
-	{		
-		return false;
-	}
-
-	FVector BoxExtend = FVector(ForwardCheckCapsuleRadius, ForwardCheckCapsuleRadius, ForwardCheckCapsuleHalfHeight);
-	if (!OTraceUtils::SweepBoxSingleByChannel(GetWorld(),ForwardCheckHitResult, ForwardStartLocation, ForwardEndLocation, BoxExtend, FQuat::Identity, ECC_Climbing, QueryParams, FCollisionResponseParams::DefaultResponseParam, bDebugDraw, DrawTime))
+	if (OTraceUtils::OverlapCapsuleBlockingByProfile(GetWorld(), CheckLocation, CapsuleRadius * CoefCapsuleSize, CheckCapsuleHalfHeight,
+		FQuat::Identity, CollisionProfilePawn, QueryParams, false, DrawTime))
 	{
 		return false;
 	}
 	
 	
 	LedgeDescription.Location = OverlapLocation;
-	LedgeDescription.Rotation = (ForwardCheckHitResult.ImpactNormal * FVector(-1.f, -1.f, 0.f)).ToOrientationRotator();
+	LedgeDescription.Rotation = ((DownwardCheckHitResult.Location - ForwardCheckHitResult.Location) * FVector(1, 1, 0.f)).ToOrientationRotator();
 	LedgeDescription.LedgeNormal = ForwardCheckHitResult.ImpactNormal.GetSafeNormal();
 	return true;
 }
