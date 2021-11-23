@@ -17,7 +17,7 @@ bool OTraceUtils::SweepCapsuleSingleByChannel(const UWorld* InWorld, struct FHit
 	{
 		DrawDebugCapsule(InWorld, Start, CapsuleHalfHeight, CapsuleRadius, Rot, TraceColor, false, DrawTime);
 		DrawDebugCapsule(InWorld, End, CapsuleHalfHeight, CapsuleRadius, Rot, TraceColor, false, DrawTime);
-		if (bResult )
+		if (bResult)
 		{
 			DrawDebugCapsule(InWorld, OutHit.Location, CapsuleHalfHeight, CapsuleRadius, Rot, HitColor, false, DrawTime);
 			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 20.f, HitColor, false, DrawTime);
@@ -40,10 +40,10 @@ bool OTraceUtils::SweepBoxSingleByChannel(const UWorld* InWorld, struct FHitResu
 	{
 		DrawDebugBox(InWorld, Start, BoxHalfExtent, Rot, TraceColor, false, DrawTime);
 		DrawDebugBox(InWorld, End, BoxHalfExtent, Rot, TraceColor, false, DrawTime);
-		if (bResult )
+		if (bResult)
 		{
 			DrawDebugBox(InWorld, OutHit.Location, BoxHalfExtent, Rot, HitColor, false, DrawTime);
-			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 20.f, HitColor, false, DrawTime);
+			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 10.f, HitColor, false, DrawTime);
 		}
 	}
 #endif
@@ -67,7 +67,7 @@ bool OTraceUtils::SweepSphereSingleByChannel(const UWorld* InWorld, FHitResult& 
 		const float StartDrawCapsuleHalfHeight = (TraceVector).Size() * 0.5f;
 		const FQuat DebugCapsuleRotation = FRotationMatrix::MakeFromZ(TraceVector).ToQuat();
 		DrawDebugCapsule(InWorld, StartDrawCapsuleLocation, StartDrawCapsuleHalfHeight, SphereRadius, DebugCapsuleRotation, TraceColor, false, DrawTime);
-		if (bResult )
+		if (bResult)
 		{
 			DrawDebugSphere(InWorld, OutHit.Location, SphereRadius, 32, HitColor, false, DrawTime);
 			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 20.f, HitColor, false, DrawTime);

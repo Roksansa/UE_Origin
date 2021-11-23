@@ -78,8 +78,6 @@ void UOBaseCharacterAnimInstance::CalcDirection()
 	const float DotProduct = FVector::DotProduct(ForwardVector, VelocityNormal);
 	const FVector CrossProduct = FVector::CrossProduct(ForwardVector, VelocityNormal);
 	const float Degree = UKismetMathLibrary::DegAcos(DotProduct);
-	GEngine->AddOnScreenDebugMessage(3, 1.0f, FColor::Orange, FString::Format(TEXT(" Cross {0} -- Degree -- {1} -- Res {2} "),
-{CrossProduct.ToString(), Degree, (Degree * FMath::Sign(CrossProduct.Z))}), true);
 	Direction = FMath::IsNearlyZero(CrossProduct.Z, 0.01f) ? FMath::Abs(Degree) : Degree * FMath::Sign(CrossProduct.Z);
 }
 

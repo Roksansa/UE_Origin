@@ -223,8 +223,6 @@ void AOBaseCharacter::Jump()
 {
 	if (BaseCharacterMovementComponent->IsMantling())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green,
-			FString::Format(TEXT(" JumpMantle CHECK {0} "), {BaseCharacterMovementComponent->IsMantling()}));
 		return;
 	}
 	if (bIsCrawling)
@@ -237,7 +235,6 @@ void AOBaseCharacter::Jump()
 	{
 		GetCharacterMovement()->bWantsToCrouch = false;
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Format(TEXT("Jump Mantle {0} "), {false}));
 	Super::Jump();
 }
 

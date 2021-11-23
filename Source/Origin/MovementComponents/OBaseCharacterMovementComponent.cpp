@@ -389,8 +389,6 @@ void UOBaseCharacterMovementComponent::AttachLadder(const AOLadderInteractiveAct
 	GetOwner()->SetActorRotation(TargetOrientationRotation, ETeleportType::TeleportPhysics);
 	GetOwner()->AddActorLocalRotation(FRotator(0.f, 180, 0.f),false, nullptr, ETeleportType::TeleportPhysics);
 
-	
-	GEngine->AddOnScreenDebugMessage(66, 10.0f, FColor::Yellow, FString::Format(TEXT(" IK loc {0} --- {1} -- {2} "), {TargetOrientationRotation.ToString(), CurrentLadder->GetActorForwardVector().ToOrientationRotator().ToString(), GetOwner()->GetActorForwardVector().ToOrientationRotator().ToString()}), true);
 	const FVector LadderUpVector = CurrentLadder->GetActorUpVector();
 	const FVector LadderForwardVector = CurrentLadder->GetActorForwardVector();
 	const FVector NewLocation = CurrentLadder->GetActorLocation() + GetProjectionFromActorToLadder(GetActorLocation()) * LadderUpVector + LadderToCharacterOffset * LadderForwardVector;
@@ -400,8 +398,6 @@ void UOBaseCharacterMovementComponent::AttachLadder(const AOLadderInteractiveAct
 	GetOwner()->SetActorRotation(Temp);
 	bRotateToLadder = true;
 	CachedBaseCharacter->bUseControllerRotationYaw = false;
-
-	GEngine->AddOnScreenDebugMessage(66, 10.0f, FColor::Yellow, FString::Format(TEXT(" !!!!! {0} --- "), {ToLadderRotator.ToString()}), true);
 }
 
 float UOBaseCharacterMovementComponent::GetProjectionFromActorToLadder(const FVector& CurrentLocation) const
@@ -657,13 +653,11 @@ void UOBaseCharacterMovementComponent::PhysClimbLadder(float DeltaTime, int32 It
 	}
 	if (bCrossLadderMinBottomOffset && NewPosProjection < LadderMinBottomOffset)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Yellow, FString::Format(TEXT(" Ladder Detach {0} {1} {2} "), {NewPosProjection , NewPosProjection + NewLocation.Z,  CurrentLadder->GetActorLocation().Z + LadderMinBottomOffset}));
 		DetachFromLadder(false);
 		return;
 	}
 	if (NewPosProjection > CurrentLadder->GetHeight() - LadderMaxTopOffset)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Purple, FString::Format(TEXT(" Ladder !!! {0} { 1} {2} "), {NewPosProjection + NewLocation.Z , CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight(),  CurrentLadder->GetActorLocation().Z + CurrentLadder->GetHeight() - LadderMaxTopOffset}));
 		CachedBaseCharacter->Mantle();
 		return;
 	}
@@ -672,7 +666,6 @@ void UOBaseCharacterMovementComponent::PhysClimbLadder(float DeltaTime, int32 It
 	SafeMoveUpdatedComponent(Delta, GetOwner()->GetActorRotation(), true, Hit);
 	if (Hit.bBlockingHit && FVector::DotProduct(Delta.GetSafeNormal(), LadderUpVector) == 1.f)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 3.0f, FColor::Green, FString::Format(TEXT(" Ladder  block!!! {0} "), {NewPosProjection + NewLocation.Z}));
 		CachedBaseCharacter->Mantle();
 	}
 }
