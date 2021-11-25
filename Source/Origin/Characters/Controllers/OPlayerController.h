@@ -18,13 +18,19 @@ class ORIGIN_API AOPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	AOPlayerController(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
+	
 	virtual void SetPawn(APawn* InPawn) override;
 	bool IsPressedAnyKeyForAction(const FName ActionName) const;
 	bool FirstPressedKeyForAction(const FName ActionName, FText& OutKeyName) const;
 
+	void BindWidgets();
 protected:
+	
+	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
-
+	UPROPERTY(VisibleAnywhere)
+	class UOWidgetManagerComponent* WidgetManager;
 private:
 	TWeakObjectPtr<class AOBaseCharacter> CachedBaseCharacter;
 	void ChangeSprint(bool bWantsToSprint);
@@ -54,3 +60,9 @@ private:
 	// gimbal lock for swim up and swim forward for y = 90. if rotate vector up to forward vector
 	float LastSwimUpValue = 0.f;
 };
+
+inline void AOPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	check(WidgetManager);
+}

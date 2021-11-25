@@ -363,6 +363,31 @@ bool AOBaseCharacter::IsWeaponInHand() const
 	return WeaponComponent->GetWeaponType() != EOEquippableItemType::None;
 }
 
+void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name)
+{
+	if (!IsValid(Object))
+	{
+		return;
+	}
+	switch (Type)
+	{
+		case EOPrimaryAttr::Health:
+		{
+			PrimaryAttributesComponent->OnChangeHealth.AddUFunction(Object, Name);
+			PrimaryAttributesComponent->UpdateHealth();
+			break;
+		}
+		case EOPrimaryAttr::Stamina:
+		{
+			PrimaryAttributesComponent->OnChangeStamina.AddUFunction(Object, Name);
+			PrimaryAttributesComponent->UpdateStamina();
+			break;
+		}
+		default: ;
+	}
+}
+
+
 void AOBaseCharacter::OnDie()
 {
 	PlayAnimMontage(DeathAnimMontage);
@@ -371,9 +396,13 @@ void AOBaseCharacter::OnDie()
 	SetLifeSpan(5.f);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponComponent->StopFire();
+	if (Controller)
+	{
+		Controller->ChangeState(NAME_Spectating);
+	}
 }
 
-void AOBaseCharacter::OnChangeHealth(float Health, float Diff)
+void AOBaseCharacter::OnChangeHealth(float Health, float Diff, float MaxValue)
 {
 	if (Health > SMALL_NUMBER && Diff < 0)
 	{

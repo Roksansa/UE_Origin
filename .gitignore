@@ -8,3 +8,5 @@ BuildFromBat/
 .idea/
 .vs/
 .p4ignore.txt
+*.sln
+.git

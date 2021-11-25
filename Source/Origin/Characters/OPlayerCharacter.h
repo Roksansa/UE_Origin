@@ -66,7 +66,8 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Crawling")
 	float LocationXMeshOffsetForCrawling = 50.f;
-
+	
+	virtual void OnDie() override;
 private:
 	bool bWantFire = false;
 	FTimerHandle CheckFireTimerHandle;

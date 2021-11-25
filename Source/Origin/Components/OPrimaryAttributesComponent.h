@@ -6,7 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "OPrimaryAttributesComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnChangeHealth, float, float);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnChangeHealth, float, float, float);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnChangeStamina, float, float, float);
 DECLARE_MULTICAST_DELEGATE(FOnDie);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -20,9 +21,13 @@ public:
 	
 	FOnChangeHealth OnChangeHealth;
 	FOnDie OnDie;
+
+	FOnChangeStamina OnChangeStamina;
 	
 	void TryChangeStamina(float DeltaSeconds, bool bIsSprinting);
 	bool GetIsOutOfStamina() const;
+	void UpdateHealth() const;
+	void UpdateStamina() const;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -47,10 +52,5 @@ protected:
 	//end stamina properties
 private:
 	float CurrentHealth = 0.f;
-
-	
 	float CurrentStamina = 0.f;
-
-public:
-	
 };

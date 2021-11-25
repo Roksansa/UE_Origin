@@ -12,6 +12,8 @@ void UOPrimaryAttributesComponent::BeginPlay()
 {
 	Super::BeginPlay();
 	check(GetOwner());
+	check(MaxHealth > 0);
+	check(MaxStamina > 0);
 	CurrentHealth = MaxHealth;
 	GetOwner()->OnTakeAnyDamage.AddDynamic(this, &UOPrimaryAttributesComponent::OnTakeAnyDamage);
 
@@ -29,9 +31,10 @@ void UOPrimaryAttributesComponent::OnTakeAnyDamage(AActor* DamagedActor, float D
 	{
 		const float PrevHealth = CurrentHealth;
 		CurrentHealth = FMath::Clamp(CurrentHealth - Damage, 0.f, MaxHealth);
+		Damage = PrevHealth - CurrentHealth;
 		if (CurrentHealth != PrevHealth)
 		{
-			OnChangeHealth.Broadcast(CurrentHealth, -Damage);
+			OnChangeHealth.Broadcast(CurrentHealth, -Damage, MaxHealth);
 
 			GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Red, FString::Printf(TEXT("Health: %.2f"), CurrentHealth), true,
 				FVector2D(2, 2));
@@ -47,6 +50,7 @@ void UOPrimaryAttributesComponent::OnTakeAnyDamage(AActor* DamagedActor, float D
 
 void UOPrimaryAttributesComponent::TryChangeStamina(float DeltaSeconds, bool bIsSprinting)
 {
+	float PreviousStamina = CurrentStamina;
 	//check if !bIsSprinting
 	if (!bIsSprinting && CurrentStamina < MaxStamina)
 	{
@@ -76,9 +80,25 @@ void UOPrimaryAttributesComponent::TryChangeStamina(float DeltaSeconds, bool bIs
 		GEngine->AddOnScreenDebugMessage(1, 1.0f, CurrentColor, FString::Printf(TEXT("Stamina: %.2f"), CurrentStamina), true,
 			FVector2D(2, 2));
 	}
+
+	if (PreviousStamina != CurrentStamina)
+	{
+		OnChangeStamina.Broadcast(CurrentStamina, CurrentStamina - PreviousStamina, MaxStamina);
+	}
 }
 
 bool UOPrimaryAttributesComponent::GetIsOutOfStamina() const
 {
 	return bIsOutOfStamina;
 }
+
+void UOPrimaryAttributesComponent::UpdateHealth() const
+{
+	OnChangeHealth.Broadcast(CurrentHealth, 0, MaxHealth);
+}
+
+void UOPrimaryAttributesComponent::UpdateStamina() const
+{
+	OnChangeStamina.Broadcast(CurrentStamina, 0, MaxStamina);
+}
+

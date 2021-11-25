@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OTypes.h"
 #include "GameFramework/Character.h"
 #include "Settings/OMantlingSettings.h"
 
@@ -94,6 +95,8 @@ public:
 
 	const UOWeaponComponent* GetWeaponComponent() const;
 	bool IsWeaponInHand() const;
+	
+	void BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name);
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
@@ -140,10 +143,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Anim")
 	UAnimMontage* DeathAnimMontage;
 	UFUNCTION()
-	void OnDie();
+	virtual void OnDie();
 
 	UFUNCTION()
-	void OnChangeHealth(float Health, float Diff);
+	void OnChangeHealth(float Health, float Diff, float MaxValue);
 private:
 	void FillMantlingMovementParameters(struct FOLedgeDescription LedgeDescription, FOMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;

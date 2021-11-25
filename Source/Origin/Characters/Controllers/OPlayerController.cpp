@@ -3,9 +3,15 @@
 #include "OPlayerController.h"
 
 #include "OTypes.h"
+#include "Components/OWidgetManagerComponent.h"
 #include "GameFramework/PlayerInput.h"
 #include "Origin/Characters/OBaseCharacter.h"
 #include "Origin/Characters/OPlayerCharacter.h"
+
+AOPlayerController::AOPlayerController(const FObjectInitializer& ObjectInitializer)
+{
+	WidgetManager = CreateDefaultSubobject<UOWidgetManagerComponent>("WidgetManager");
+}
 
 void AOPlayerController::SetPawn(APawn* InPawn)
 {
@@ -19,6 +25,7 @@ void AOPlayerController::SetPawn(APawn* InPawn)
 			PlayerCameraManager->ViewPitchMin = PlayerCharacter->GetViewPitchMin();
 			PlayerCameraManager->ViewPitchMax = PlayerCharacter->GetViewPitchMax();
 		}
+		WidgetManager->InitWidgets();
 	}
 }
 
@@ -45,6 +52,11 @@ bool AOPlayerController::FirstPressedKeyForAction(const FName ActionName, FText&
 		}
 	}
 	return false;
+}
+
+void AOPlayerController::BindWidgets()
+{
+	WidgetManager->BindWidgets(CachedBaseCharacter.Get());
 }
 
 void AOPlayerController::SetupInputComponent()

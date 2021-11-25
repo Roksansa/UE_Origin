@@ -115,8 +115,11 @@ protected:
 	float LadderMinBottomOffset = 80;
 	UPROPERTY(Category="Character Movement: Ladder", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float LadderMaxTopOffset = 60;
-	UPROPERTY(Category="Character Movement: Ladder", VisibleAnywhere, BlueprintReadOnly)
-	FRotator ToLadderRotator = FRotator::ZeroRotator;
+	/**
+	 * In degrees
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Detection Setting", meta = (UIMin = 0.f, UIMax = 120.f, ClampMin = 0.f, ClampMax = 120.f))
+	float MaxLadderAngleToCharacterForward  = 75;
 	
 	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float MaxWalkWithWeaponSpeed = 60;
@@ -132,7 +135,6 @@ private:
 	UPROPERTY()
 	const class AOLadderInteractiveActor* CurrentLadder = nullptr;
 	bool bCrossLadderMinBottomOffset = false;
-	FVector ActorPositionOnLadderWorldSpace = FVector::ZeroVector;
-
+	FRotator ToLadderRotator = FRotator::ZeroRotator;
 	bool bRotateToLadder = false;
 };

@@ -7,6 +7,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/OPrimaryAttributesComponent.h"
 #include "Components/OWeaponComponent.h"
+#include "Controllers/OPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Origin/Actors/OLadderInteractiveActor.h"
@@ -34,6 +35,11 @@ AOPlayerCharacter::AOPlayerCharacter()
 void AOPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	AOPlayerController* CurrentPlayerController = Cast<AOPlayerController>(GetController());
+	if (CurrentPlayerController != nullptr)
+	{
+		CurrentPlayerController->BindWidgets();
+	}
 }
 
 void AOPlayerCharacter::LookUp(float Value)
@@ -303,4 +309,10 @@ float AOPlayerCharacter::GetViewPitchMin() const
 float AOPlayerCharacter::GetViewPitchMax() const
 {
 	return ViewPitchMax;
+}
+
+void AOPlayerCharacter::OnDie()
+{
+	Super::OnDie();
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
 }

@@ -34,3 +34,11 @@ enum class EOEquippableItemType : uint8
 	Shotgun,
 	MAX UMETA(Hidden)
 };
+
+UENUM(BlueprintType)
+enum class EOPrimaryAttr : uint8
+{
+	Health,
+	Stamina,
+	MAX UMETA(Hidden)
+};

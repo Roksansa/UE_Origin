@@ -8,6 +8,7 @@
 #include "Curves/CurveVector.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Origin/Actors/OLadderInteractiveActor.h"
 #include "Origin/Characters/OBaseCharacter.h"
 
@@ -380,6 +381,11 @@ bool UOBaseCharacterMovementComponent::IsMantling() const
 
 void UOBaseCharacterMovementComponent::AttachLadder(const AOLadderInteractiveActor* Ladder)
 {
+	if (UKismetMathLibrary::DegAcos(FVector::DotProduct(GetOwner()->GetActorForwardVector(), Ladder->GetActorForwardVector())) < (180 - MaxLadderAngleToCharacterForward))
+	{
+		return;
+	}
+	
 	SetMovementMode(EMovementMode::MOVE_Custom, (uint8)ECustomMovementMode::CMOVE_ClimbLadder);
 	CurrentLadder = Ladder;
 	bCrossLadderMinBottomOffset = false;
@@ -465,7 +471,6 @@ void UOBaseCharacterMovementComponent::BaseCharacterOnLadderPhysRotation(float D
 			bRotateToLadder = false;
 		}
 	}
-	return;
 }
 
 void UOBaseCharacterMovementComponent::PhysicsRotation(float DeltaTime)
@@ -622,9 +627,7 @@ void UOBaseCharacterMovementComponent::PhysMantling(float DeltaTime, int32 Itera
 	CorrectorInitialLocation.Z = FMath::Lerp(CurrentMantlingParameters.InitialLocation.Z, CurrentMantlingParameters.InitialAnimationLocation.Z, ZCorrectionAlpha);
 
 	const FVector NewLocation = FMath::Lerp(CorrectorInitialLocation, CurrentMantlingParameters.TargetLocation, PositionAlpha);
-	
 	const FRotator NewRotation = FMath::Lerp(CurrentMantlingParameters.InitialRotation, CurrentMantlingParameters.TargetRotation, RotationAlpha);
-
 	
 	const FVector Delta = NewLocation - GetActorLocation();
 	FHitResult Hit;
