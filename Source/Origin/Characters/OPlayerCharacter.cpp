@@ -40,6 +40,7 @@ void AOPlayerCharacter::BeginPlay()
 	{
 		CurrentPlayerController->BindWidgets();
 	}
+	CurrentFOV = CameraComponent->FieldOfView;
 }
 
 void AOPlayerCharacter::LookUp(float Value)

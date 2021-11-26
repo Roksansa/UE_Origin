@@ -78,29 +78,32 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
 	float Direction = 0.f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	FRotator AimRotation = FRotator::ZeroRotator;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	float MinAimPitch = -15.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	float MaxAimPitch = -45.f;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	float MinAimYawIn = 10.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	float MaxAimYawIn = 90.f;
 	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	float CurrentPitch = 0.f;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	float LerpSpeed = 0.1f;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings")
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
 	EOEquippableItemType WeaponItemType = EOEquippableItemType::None;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Settings|Weapon")
+	bool bIsAiming = false;;
 private:
 	TWeakObjectPtr<class AOBaseCharacter> CurrentCharacter;
 	TWeakObjectPtr<class UOCharacterIKComponent> IKComp;

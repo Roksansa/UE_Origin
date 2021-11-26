@@ -49,6 +49,9 @@ public:
 	
 	virtual void StartFire(){};
 	virtual void StopFire();
+
+	virtual void StartAim();
+	virtual void StopAim();
 	
 	EOEquippableItemType GetItemType() const;
 	FOnMakeShot OnMakeShot;
@@ -60,6 +63,7 @@ public:
 	bool SetCountBullets(int32 NewCount);
 	bool IsAutoReload() const;
 	bool IsFullAuto() const;
+	float GetAimFOV() const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams")
 	USkeletalMeshComponent* WeaponMesh;
@@ -76,6 +80,18 @@ protected:
 	FOAmmoData DefaultAmmo = FOAmmoData{30, EOAmmoType::Rifle};
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components|WeaponParams")
 	int32 CurrentBullets = 25;
+	/**
+	* Spread angle in degrees
+	*/
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams", meta=(ClampMin = 0.0f, ClampMax = 2.f, UImin = 0.f, UIMax = 2.f))
+	float BulletSpread = 1.f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams", meta=(ClampMin = 0.0f, ClampMax = 2.f, UImin = 0.f, UIMax = 2.f))
+	float AimBulletSpread = 0.5f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams", meta=(ClampMin = 0.0f, ClampMax = 2.f, UImin = 0.f, UIMax = 2.f))
+	float AimFOV = 60.f;
+
+	float CurrentBulletSpread = 0.f;
+	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components|WeaponParams")
 	bool bIsAutoReload = false;
 	

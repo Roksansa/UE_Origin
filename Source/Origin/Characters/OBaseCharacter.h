@@ -17,6 +17,8 @@ class AOLadderInteractiveActor;
 class UOWeaponComponent;
 class UOPrimaryAttributesComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangeAiming, bool, bIsAiming);
+
 UCLASS(Abstract, NotBlueprintable)
 class ORIGIN_API AOBaseCharacter : public ACharacter
 {
@@ -52,6 +54,8 @@ public:
 	virtual void ReloadAmmo();
 	virtual void NextWeapon();
 	virtual void NextWeaponIndex(int32 NumberWeapon);
+	virtual void StartAiming();
+	virtual void StopAiming();
 	bool CanUseWeapon() const;
 
 	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
@@ -97,6 +101,9 @@ public:
 	bool IsWeaponInHand() const;
 	
 	void BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnChangeAiming OnChangeAiming;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
@@ -150,4 +157,7 @@ protected:
 private:
 	void FillMantlingMovementParameters(struct FOLedgeDescription LedgeDescription, FOMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;
+
+	bool bWantAiming = false;
+	FTimerHandle CheckAimingTimerHandle;
 };

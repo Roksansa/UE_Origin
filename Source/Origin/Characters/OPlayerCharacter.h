@@ -68,6 +68,10 @@ protected:
 	float LocationXMeshOffsetForCrawling = 50.f;
 	
 	virtual void OnDie() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Config|Camera")
+	float CurrentFOV = 90.f;
+	
 private:
 	bool bWantFire = false;
 	FTimerHandle CheckFireTimerHandle;

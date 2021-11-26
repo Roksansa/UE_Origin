@@ -43,6 +43,7 @@ void UOBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	ClimbingLadderSpeedRatio = bIsOnLadder ? CharacterMovementComponent->GetClimbingLadderSpeedRatio() : Speed;
 
 	WeaponItemType = CurrentCharacter->GetWeaponComponent()->GetWeaponType();
+	bIsAiming = CurrentCharacter->GetWeaponComponent()->GetAiming();
 	
 	CalcDirection();
 	CalcAimRotation(CurrentCharacter->GetBaseAimRotation());

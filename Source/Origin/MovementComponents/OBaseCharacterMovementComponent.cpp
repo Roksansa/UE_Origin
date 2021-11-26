@@ -5,6 +5,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/OWeaponComponent.h"
 #include "Curves/CurveVector.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -199,7 +200,7 @@ float UOBaseCharacterMovementComponent::GetMaxSpeed() const
 		}
 		if (CachedBaseCharacter && CachedBaseCharacter->IsWeaponInHand())
 		{
-			return MaxWalkWithWeaponSpeed;
+			return CachedBaseCharacter->GetWeaponComponent()->GetAiming() ? MaxAimWalkWithWeaponSpeed : MaxWalkWithWeaponSpeed;
 		}
 		return MaxWalkSpeed;
 	}

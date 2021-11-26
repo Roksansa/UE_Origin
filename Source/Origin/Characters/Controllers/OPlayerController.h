@@ -56,6 +56,8 @@ private:
 	void NextWeapon();
 	void ReloadAmmo();
 	void NextWeaponIndex();
+	void StartAiming();
+	void StopAiming();
 
 	// gimbal lock for swim up and swim forward for y = 90. if rotate vector up to forward vector
 	float LastSwimUpValue = 0.f;

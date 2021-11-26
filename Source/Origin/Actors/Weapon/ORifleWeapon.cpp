@@ -60,9 +60,3 @@ void AORifleWeapon::MakeShot()
 	DecreaseAmmo();
 	GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &AORifleWeapon::MakeShot, TimerBetweenShots, false);
 }
-
-FVector AORifleWeapon::GetShootDirection(const FVector& ViewRotationVector) const
-{
-	const float HalfRad = FMath::DegreesToRadians(BulletSpread);
-	return FMath::VRandCone(ViewRotationVector,HalfRad);
-}

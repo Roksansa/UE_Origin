@@ -123,6 +123,8 @@ protected:
 	
 	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float MaxWalkWithWeaponSpeed = 60;
+	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
+	float MaxAimWalkWithWeaponSpeed = 250;
 private:
 	//begin additional params for spring settings
 	UPROPERTY(Transient, DuplicateTransient)

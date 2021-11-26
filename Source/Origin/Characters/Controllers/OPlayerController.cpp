@@ -84,6 +84,8 @@ void AOPlayerController::SetupInputComponent()
 	InputComponent->BindAction("NextWeapon", EInputEvent::IE_Pressed, this, &AOPlayerController::NextWeapon);
 	InputComponent->BindAction("NextWeaponIndex", EInputEvent::IE_Pressed, this, &AOPlayerController::NextWeaponIndex);
 	InputComponent->BindAction("ReloadAmmo", EInputEvent::IE_Pressed, this, &AOPlayerController::ReloadAmmo);
+	InputComponent->BindAction("Aim", EInputEvent::IE_Pressed, this, &AOPlayerController::StartAiming);
+	InputComponent->BindAction("Aim", EInputEvent::IE_Released, this, &AOPlayerController::StopAiming);
 }
 
 void AOPlayerController::ChangeSprint(bool bWantsToSprint)
@@ -261,5 +263,21 @@ void AOPlayerController::NextWeaponIndex()
 				CachedBaseCharacter->NextWeaponIndex(NumberKey);
 			}
 		}
+	}
+}
+
+void AOPlayerController::StartAiming()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->StartAiming();
+	}
+}
+
+void AOPlayerController::StopAiming()
+{
+	if (CachedBaseCharacter.IsValid())
+	{
+		CachedBaseCharacter->StopAiming();
 	}
 }

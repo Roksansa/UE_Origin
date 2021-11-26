@@ -21,11 +21,8 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams")
 	float TimerBetweenShots = 0.1f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams")
-	float BulletSpread = 1.f;
 
 	virtual void MakeShot() override;
-	virtual FVector GetShootDirection(const FVector& ViewRotationVector) const override;
 private:
 	FTimerHandle ShotTimerHandle;
 };

@@ -21,12 +21,23 @@ void AOBaseWeapon::BeginPlay()
 	Super::BeginPlay();
 	check(WeaponMesh);
 	OnMakeShot.AddUObject(this, &AOBaseWeapon::PlayVisibleShot);
+	CurrentBulletSpread = BulletSpread;
 }
 
 
 void AOBaseWeapon::StopFire()
 {
 	OnStopFire.Broadcast();
+}
+
+void AOBaseWeapon::StartAim()
+{
+	CurrentBulletSpread = AimBulletSpread;
+}
+
+void AOBaseWeapon::StopAim()
+{
+	CurrentBulletSpread = BulletSpread;
 }
 
 EOEquippableItemType AOBaseWeapon::GetItemType() const
@@ -64,7 +75,8 @@ FVector AOBaseWeapon::GetMuzzleWorldLocation() const
 
 FVector AOBaseWeapon::GetShootDirection(const FVector& ViewRotationVector) const
 {
-	return ViewRotationVector;
+	const float HalfRad = FMath::DegreesToRadians(CurrentBulletSpread);
+	return FMath::VRandCone(ViewRotationVector,HalfRad);
 }
 
 bool AOBaseWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
@@ -177,6 +189,11 @@ bool AOBaseWeapon::IsAutoReload() const
 bool AOBaseWeapon::IsFullAuto() const
 {
 	return bIsFullAuto;
+}
+
+float AOBaseWeapon::GetAimFOV() const
+{
+	return AimFOV;
 }
 
 void AOBaseWeapon::MakeDamage(const FHitResult& HitResult) const

@@ -7,7 +7,6 @@
 #include "Actors/Weapon/OBaseWeapon.h"
 #include "Characters/OBaseCharacter.h"
 #include "Characters/OPlayerCharacter.h"
-#include "Characters/Animations/AnimNotify_OFinishEquip.h"
 #include "Characters/Controllers/OPlayerController.h"
 #include "GameFramework/Character.h"
 
@@ -48,6 +47,22 @@ void UOWeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	Super::EndPlay(EndPlayReason);
 }
 
+bool UOWeaponComponent::GetAiming() const
+{
+	return bAiming;
+}
+
+float UOWeaponComponent::GetCurrentAimingFOV() const
+{
+	return CurrentWeapon ? CurrentWeapon->GetAimFOV() : 0.f;
+}
+
+void UOWeaponComponent::ChangeAiming(bool bWantAiming)
+{
+	bAiming = bWantAiming;
+	//doto func
+}
+
 void UOWeaponComponent::AttachWeaponToSocket(AOBaseWeapon* Weapon, USkeletalMeshComponent* Mesh, const FName& EquipSocketName)
 {
 	if (!Weapon)
@@ -65,10 +80,15 @@ void UOWeaponComponent::SpawnWeapons()
 	{
 		return;
 	}
-	AOPlayerCharacter* PlayerCharacter = Cast<AOPlayerCharacter>(GetOwner());
-	if (PlayerCharacter)
+
+	if (AOBaseCharacter* BaseCharacter = Cast<AOBaseCharacter>(GetOwner()))
 	{
-		PlayerCharacter->OnAllowFire.AddUObject(this, &UOWeaponComponent::OnAllowFire);
+		BaseCharacter->OnChangeAiming.AddDynamic(this, &UOWeaponComponent::ChangeAiming);
+		
+		if (AOPlayerCharacter* PlayerCharacter = Cast<AOPlayerCharacter>(GetOwner()))
+		{
+			PlayerCharacter->OnAllowFire.AddUObject(this, &UOWeaponComponent::OnAllowFire);
+		}
 	}
 
 	ArmoryWeapons.Reset(0);

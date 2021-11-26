@@ -84,6 +84,9 @@ public:
 	void ReloadAmmo();
 
 	EOWeaponUseState GetState() const;
+	bool GetAiming() const;
+	UFUNCTION(BlueprintCallable)
+	float GetCurrentAimingFOV() const;
 protected:
 
 	FOnNotifyFinishEquip OnNotifyFinishEquip;
@@ -122,6 +125,8 @@ private:
 	TArray<FOAmmoDescription, TInlineAllocator<AmmoCount>> CurrentAmmo;
 	FTimerHandle ReloadTimerHandle;
 	int CurrentIndex = 0;
+
+	bool bAiming = false;
 	
 	void InitAmmo();
 	void SpawnWeapons();
@@ -156,4 +161,7 @@ private:
 	
 	void AddEventForMontageEnded();
 	void RemoveEventForMontageEnded();
+
+	UFUNCTION()
+	void ChangeAiming(bool bWantAiming);
 };

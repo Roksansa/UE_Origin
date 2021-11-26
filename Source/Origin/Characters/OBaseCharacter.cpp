@@ -188,6 +188,40 @@ void AOBaseCharacter::NextWeaponIndex(int32 NumberWeapon)
 	WeaponComponent->NextWeapon(NumberWeapon);
 }
 
+void AOBaseCharacter::StartAiming()
+{
+	if (WeaponComponent->GetWeaponType() == EOEquippableItemType::None || !CanUseWeapon())
+	{
+		return;
+	}
+
+	bWantAiming = true;
+	OnChangeAiming.Broadcast(bWantAiming);
+	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(CheckAimingTimerHandle, [this]()
+	{
+		const bool bAllowAiming = CanUseWeapon();
+
+		if (bAllowAiming && bWantAiming && !WeaponComponent->GetAiming() && WeaponComponent->GetState() != EOWeaponUseState::None)
+		{
+			OnChangeAiming.Broadcast(bAllowAiming);
+			return;
+		}
+
+		if (!bAllowAiming && bWantAiming && WeaponComponent->GetAiming() && WeaponComponent->GetState() != EOWeaponUseState::None)
+		{
+			OnChangeAiming.Broadcast(bAllowAiming);
+		}
+	}, 0.5f, true);
+}
+
+void AOBaseCharacter::StopAiming()
+{
+	bWantAiming = false;
+	OnChangeAiming.Broadcast(bWantAiming);
+	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
+}
+
 UOBaseCharacterMovementComponent* AOBaseCharacter::GetBaseCharacterMovementComponent() const
 {
 	return BaseCharacterMovementComponent;
