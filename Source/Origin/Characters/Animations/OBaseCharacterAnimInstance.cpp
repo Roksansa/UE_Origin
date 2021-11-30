@@ -85,10 +85,10 @@ void UOBaseCharacterAnimInstance::CalcDirection()
 void UOBaseCharacterAnimInstance::CalcAimRotation(const FRotator& Rotator)
 {
 	AimRotation = FRotator::ZeroRotator;
-	AimRotation.Yaw = Rotator.Pitch;
+	AimRotation.Yaw = FMath::Sign(Rotator.Pitch) * FMath::Clamp(FMath::Abs(Rotator.Pitch), MinAimYawIn, MaxAimYawIn);
 	if (CurrentCharacter->IsPlayerControlled())
 	{
-		const float ValueClamped = UKismetMathLibrary::MapRangeClamped(FMath::Abs(Rotator.Pitch), MinAimYawIn,MaxAimYawIn, MinAimPitch, MaxAimPitch);
+		const float ValueClamped = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AimRotation.Yaw), MinAimYawIn,MaxAimYawIn, MinAimPitch, MaxAimPitch);
 		CurrentPitch = UKismetMathLibrary::Lerp(CurrentPitch, ValueClamped, LerpSpeed);
 		AimRotation.Pitch = CurrentPitch;
 	}
