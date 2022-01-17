@@ -63,6 +63,10 @@ void AOPlayerCharacter::MoveRight(float Value)
 {
 	if ((GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling()) && !FMath::IsNearlyZero(Value, 1E-06f))
 	{
+		if (bIsSprinting || BaseCharacterMovementComponent->WillBeActiveSprintInCurrentTick(bIsSprinting) || PrimaryAttributesComponent->GetIsOutOfStamina())
+		{
+			return;
+		}
 		const FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
 		const FVector RightVector = YawRotator.RotateVector(FVector::RightVector);
 		AddMovementInput(RightVector, Value);
@@ -73,6 +77,10 @@ void AOPlayerCharacter::MoveForward(float Value)
 {
 	if ((GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling()) && !FMath::IsNearlyZero(Value, 1E-06f))
 	{
+		if (PrimaryAttributesComponent->GetIsOutOfStamina() && Value < 0.f)
+		{
+			return;
+		}
 		const FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
 		const FVector ForwardVector = YawRotator.RotateVector(FVector::ForwardVector);
 		AddMovementInput(ForwardVector, Value);

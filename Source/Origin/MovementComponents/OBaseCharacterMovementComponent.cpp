@@ -126,6 +126,11 @@ void UOBaseCharacterMovementComponent::SetUpdatedComponent(USceneComponent* NewU
 	}
 }
 
+bool UOBaseCharacterMovementComponent::WillBeActiveSprintInCurrentTick(const bool bIsSprinting) const
+{
+	return !bIsSprinting && bWantsToSprint && CanSprintInCurrentState();
+}
+
 void UOBaseCharacterMovementComponent::UpdateCharacterStateBeforeMovement(float DeltaSeconds)
 {
 	const bool bIsCrouching = IsCrouching();
@@ -151,7 +156,7 @@ void UOBaseCharacterMovementComponent::UpdateCharacterStateBeforeMovement(float 
 	if (UpdatedComponent && CachedBaseCharacter)
 	{
 		const bool bIsSprinting = IsSprinting();
-		if (!bIsSprinting && bWantsToSprint && CanSprintInCurrentState())
+		if (WillBeActiveSprintInCurrentTick(bIsSprinting))
 		{
 			//setup speed to sprint
 			ChangeSprint(true);

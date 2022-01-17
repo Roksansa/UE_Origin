@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "OTypes.h"
+#include "Components/OWeaponComponent.h"
 #include "GameFramework/Character.h"
 #include "Settings/OMantlingSettings.h"
 
@@ -104,6 +105,8 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnChangeAiming OnChangeAiming;
+
+	FOnNotifyChangeWeapon& GetOnNotifyChangeWeapon();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;

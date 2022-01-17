@@ -3,23 +3,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "OPrimaryAttrWidget.h"
 #include "OTypes.h"
 #include "Blueprint/UserWidget.h"
 #include "OMainWidget.generated.h"
 
-/**
- * 
- */
+class UOCrossHairWidget;
+
 UCLASS()
 class ORIGIN_API UOMainWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
-	UOPrimaryAttrWidget* GetAttrWidget(EOPrimaryAttr Type);
-
+	class UOPrimaryAttrWidget* GetAttrWidget(EOPrimaryAttr Type);
 	FName GetAttrEventName(EOPrimaryAttr Type);
+
+	UFUNCTION()
+	void OnChangeAiming(bool bIsAiming);
+	void OnNotifyChangeWeapon(EOEquippableItemType EquippableItem);
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName HealthWidgetName;
@@ -30,4 +32,11 @@ protected:
 	FName OnHealthChangedName = FName("OnPrimaryAttrChanged");
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="EventName")
 	FName OnStaminaChangedName = FName("OnPrimaryAttrChanged");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="WidgetName")
+	TMap<EOEquippableItemType, UOCrossHairWidget*> CrossHairWidgets;
+
+private:
+	UPROPERTY()
+	UOCrossHairWidget* CurrentCrossHairWidget;
 };

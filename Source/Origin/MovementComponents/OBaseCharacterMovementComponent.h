@@ -36,6 +36,8 @@ public:
 	bool IsSprinting() const;
 	void ChangeSprint(bool bStartSprint);
 	bool CanSprintInCurrentState() const;
+	/** Using only movement component and this owner. */
+	bool WillBeActiveSprintInCurrentTick(bool bIsSprinting) const;
 	/** If true, try to Sprint (or keep Sprinting) on next update. If false, try to stop Sprint on next update. */
 	UPROPERTY(Category="Character Movement (General Settings)", VisibleInstanceOnly, BlueprintReadOnly)
 	uint8 bWantsToSprint:1;

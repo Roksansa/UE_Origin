@@ -208,7 +208,7 @@ bool UOWeaponComponent::IsPlayingEquipMontage()
 
 void UOWeaponComponent::NextWeapon(int WeaponNumber)
 {
-	if (State != EOWeaponUseState::Idle && State != EOWeaponUseState::Fire)
+	if (CurrentIndex == (WeaponNumber-1) || State != EOWeaponUseState::Idle && State != EOWeaponUseState::Fire)
 	{
 		return;
 	}
@@ -284,6 +284,7 @@ void UOWeaponComponent::EquipWeapon(int WeaponIndex)
 	else
 	{
 		State = EOWeaponUseState::Idle;
+		OnNotifyChangeWeapon.Broadcast(GetWeaponType());
 	}
 }
 
@@ -434,6 +435,7 @@ void UOWeaponComponent::OnFinishEquip(bool bIsOldWeapon)
 	AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), ArmoryEquipSocketName);
 	CurrentWeapon = ArmoryWeapons[CurrentIndex];
 	AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), WeaponSocketName);
+	OnNotifyChangeWeapon.Broadcast(GetWeaponType());
 }
 
 void UOWeaponComponent::ResetFireInWeapon()
@@ -465,6 +467,7 @@ void UOWeaponComponent::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 			CurrentIndex = GetWeaponIndex();
 			if (State == EOWeaponUseState::Equip)
 			{
+				OnNotifyChangeWeapon.Broadcast(GetWeaponType());
 				State = EOWeaponUseState::Idle;
 			}
 		}

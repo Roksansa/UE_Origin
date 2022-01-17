@@ -217,8 +217,11 @@ void AOBaseCharacter::StartAiming()
 
 void AOBaseCharacter::StopAiming()
 {
-	bWantAiming = false;
-	OnChangeAiming.Broadcast(bWantAiming);
+	if (bWantAiming)
+	{
+		bWantAiming = false;
+		OnChangeAiming.Broadcast(bWantAiming);
+	}
 	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
 }
 
@@ -419,6 +422,11 @@ void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* 
 		}
 		default: ;
 	}
+}
+
+FOnNotifyChangeWeapon& AOBaseCharacter::GetOnNotifyChangeWeapon()
+{
+	return WeaponComponent->OnNotifyChangeWeapon;
 }
 
 

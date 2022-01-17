@@ -53,6 +53,7 @@ enum class EOWeaponUseState : uint8
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyFinishEquip, bool);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnNotifyFinishReload, int32, bool);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyChangeWeapon, EOEquippableItemType);
 
 class AOBaseWeapon;
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -87,6 +88,9 @@ public:
 	bool GetAiming() const;
 	UFUNCTION(BlueprintCallable)
 	float GetCurrentAimingFOV() const;
+
+	FOnNotifyChangeWeapon OnNotifyChangeWeapon;
+	
 protected:
 
 	FOnNotifyFinishEquip OnNotifyFinishEquip;

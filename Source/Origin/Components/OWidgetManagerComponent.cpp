@@ -31,6 +31,8 @@ void UOWidgetManagerComponent::BindWidgets(AOBaseCharacter* Character)
 		const EOPrimaryAttr PrimaryAttr = static_cast<EOPrimaryAttr>(i);
 		Character->BindOnChangePrimaryAttribute(PrimaryAttr, MainWidget->GetAttrWidget(PrimaryAttr), MainWidget->GetAttrEventName(PrimaryAttr));
 	}
+	Character->OnChangeAiming.AddDynamic(MainWidget.Get(), &UOMainWidget::OnChangeAiming);
+	Character->GetOnNotifyChangeWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyChangeWeapon);
 	
 	bIsWidgetsBinded = true;
 }

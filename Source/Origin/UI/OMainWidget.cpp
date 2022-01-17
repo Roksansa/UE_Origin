@@ -3,6 +3,8 @@
 
 #include "OMainWidget.h"
 
+#include "OCrossHairWidget.h"
+#include "OPrimaryAttrWidget.h"
 #include "Blueprint/WidgetTree.h"
 
 UOPrimaryAttrWidget* UOMainWidget::GetAttrWidget(EOPrimaryAttr Type)
@@ -14,4 +16,31 @@ UOPrimaryAttrWidget* UOMainWidget::GetAttrWidget(EOPrimaryAttr Type)
 FName UOMainWidget::GetAttrEventName(EOPrimaryAttr Type)
 {
 	return Type == EOPrimaryAttr::Health ? OnHealthChangedName : OnStaminaChangedName;
+}
+
+void UOMainWidget::OnChangeAiming(bool bIsAiming)
+{
+	if (CurrentCrossHairWidget)
+	{
+		CurrentCrossHairWidget->SwitchAnimAim(bIsAiming);
+	}
+}
+
+void UOMainWidget::OnNotifyChangeWeapon(EOEquippableItemType EquippableItem)
+{
+	if (CrossHairWidgets.Contains(EquippableItem) && CurrentCrossHairWidget != CrossHairWidgets[EquippableItem])
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Blue, "1");
+		if (CurrentCrossHairWidget)
+		{
+			CurrentCrossHairWidget->SwitchAnimHide(false);
+		}
+		
+		CurrentCrossHairWidget = CrossHairWidgets[EquippableItem];
+		
+		if (CurrentCrossHairWidget)
+		{
+			CurrentCrossHairWidget->SwitchAnimHide(true);
+		}
+	}
 }
