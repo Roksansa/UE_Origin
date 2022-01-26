@@ -409,7 +409,7 @@ void UOBaseCharacterMovementComponent::AttachLadder(const AOLadderInteractiveAct
 	ToLadderRotator = CachedBaseCharacter->GetCapsuleComponent()->GetComponentRotation();
 	GetOwner()->SetActorRotation(Temp);
 	bRotateToLadder = true;
-	CachedBaseCharacter->bUseControllerRotationYaw = false;
+	//CachedBaseCharacter->bUseControllerRotationYaw = false;
 }
 
 float UOBaseCharacterMovementComponent::GetProjectionFromActorToLadder(const FVector& CurrentLocation) const
@@ -440,7 +440,7 @@ bool UOBaseCharacterMovementComponent::ShouldRemainVertical() const
 
 void UOBaseCharacterMovementComponent::BaseCharacterDefaultPhysRotation(float DeltaTime)
 {
-	if (CachedBaseCharacter->GetVelocity().IsZero())
+	if (CachedBaseCharacter->GetVelocity().IsZero() && !bOrientRotationToMovement)
 	{
 		return;
 	}
@@ -451,9 +451,12 @@ void UOBaseCharacterMovementComponent::BaseCharacterDefaultPhysRotation(float De
 	FRotator DeltaRot = GetDeltaRotation(DeltaTime);
 	DeltaRot.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): GetDeltaRotation"));
 
-	FRotator DesiredRotation = CurrentRotation;
+	FRotator DesiredRotation = CharacterOwner->Controller->GetDesiredRotation();
 
-	DesiredRotation = CharacterOwner->Controller->GetDesiredRotation();
+	if (bOrientRotationToMovement)
+	{
+		DesiredRotation = ComputeOrientToMovementRotation(CurrentRotation, DeltaTime, DeltaRot);
+	}
 	
 	if (ShouldRemainVertical())
 	{
@@ -497,42 +500,44 @@ void UOBaseCharacterMovementComponent::BaseCharacterDefaultPhysRotation(float De
 
 void UOBaseCharacterMovementComponent::BaseCharacterOnLadderPhysRotation(float DeltaTime)
 {
-	if(bRotateToLadder)
+	if (!bRotateToLadder)
 	{
-		const FRotator DeltaRot = GetDeltaRotation(DeltaTime);
-		DeltaRot.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): GetDeltaRotation"));
+		return;
+	}
+	const FRotator DeltaRot = GetDeltaRotation(DeltaTime);
+	DeltaRot.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): GetDeltaRotation"));
 
-		// Accumulate a desired new rotation.
-		const float AngleTolerance = 1e-3f;
+	// Accumulate a desired new rotation.
+	const float AngleTolerance = 1e-3f;
 
-		const FRotator CurrentRotation = GetOwner()->GetActorRotation();
-		if (!CurrentRotation.Equals(ToLadderRotator, AngleTolerance))
+	const FRotator CurrentRotation = GetOwner()->GetActorRotation();
+	if (!CurrentRotation.Equals(ToLadderRotator, AngleTolerance))
+	{
+		FRotator DesiredRotation = ToLadderRotator;
+		//PITCH
+		if (!FMath::IsNearlyEqual(CurrentRotation.Pitch, DesiredRotation.Pitch, AngleTolerance))
 		{
-			FRotator DesiredRotation = ToLadderRotator;
-			//PITCH
-			if (!FMath::IsNearlyEqual(CurrentRotation.Pitch, DesiredRotation.Pitch, AngleTolerance))
-			{
-				DesiredRotation.Pitch = FMath::FixedTurn(CurrentRotation.Pitch, DesiredRotation.Pitch, DeltaRot.Pitch);
-			}else if (!FMath::IsNearlyEqual(CurrentRotation.Yaw, DesiredRotation.Yaw, AngleTolerance))
-			{
-				DesiredRotation.Yaw = FMath::FixedTurn(CurrentRotation.Yaw, DesiredRotation.Yaw, DeltaRot.Yaw);
-			}
-			else if (!FMath::IsNearlyEqual(CurrentRotation.Roll, DesiredRotation.Roll, AngleTolerance))
-			{
-				DesiredRotation.Roll = FMath::FixedTurn(CurrentRotation.Roll, DesiredRotation.Roll, DeltaRot.Roll);
-			}
-			// Set the new rotation.
-			DesiredRotation.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): DesiredRotation"));
-			const FQuat DesiredRotationInQuat = DesiredRotation.Quaternion();
-			GetOwner()->SetActorRotation(DesiredRotationInQuat, ETeleportType::TeleportPhysics);
-			CachedBaseCharacter->Controller->SetControlRotation(DesiredRotation);
+			DesiredRotation.Pitch = FMath::FixedTurn(CurrentRotation.Pitch, DesiredRotation.Pitch, DeltaRot.Pitch);
 		}
-		else
+		else if (!FMath::IsNearlyEqual(CurrentRotation.Yaw, DesiredRotation.Yaw, AngleTolerance))
 		{
-			CachedBaseCharacter->Controller->SetControlRotation(ToLadderRotator);
-			CachedBaseCharacter->bUseControllerRotationYaw = true;
-			bRotateToLadder = false;
+			DesiredRotation.Yaw = FMath::FixedTurn(CurrentRotation.Yaw, DesiredRotation.Yaw, DeltaRot.Yaw);
 		}
+		else if (!FMath::IsNearlyEqual(CurrentRotation.Roll, DesiredRotation.Roll, AngleTolerance))
+		{
+			DesiredRotation.Roll = FMath::FixedTurn(CurrentRotation.Roll, DesiredRotation.Roll, DeltaRot.Roll);
+		}
+		// Set the new rotation.
+		DesiredRotation.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): DesiredRotation"));
+		CachedBaseCharacter->Controller->SetControlRotation(DesiredRotation);
+		MoveUpdatedComponent(FVector::ZeroVector, DesiredRotation, /*bSweep*/ false, 0, ETeleportType::TeleportPhysics);
+	}
+	else
+	{
+		MoveUpdatedComponent(FVector::ZeroVector, ToLadderRotator, /*bSweep*/ false);
+		CachedBaseCharacter->Controller->SetControlRotation(ToLadderRotator);
+		//CachedBaseCharacter->bUseControllerRotationYaw = true;
+		bRotateToLadder = false;
 	}
 }
 
@@ -542,13 +547,14 @@ void UOBaseCharacterMovementComponent::PhysicsRotation(float DeltaTime)
 	{
 		return;
 	}
-	if (IsClimbingLadder())
+	if (IsClimbingLadder() || bRotateToLadder)
 	{
 		BaseCharacterOnLadderPhysRotation(DeltaTime);
 	}
-	if (!(bOrientRotationToMovement || bUseControllerDesiredRotation))
+	else if (!(bUseControllerDesiredRotation))
 	{
 		BaseCharacterDefaultPhysRotation(DeltaTime);
+		return;
 	}
 	
 	Super::PhysicsRotation(DeltaTime);
@@ -587,15 +593,13 @@ void UOBaseCharacterMovementComponent::OnMovementModeChanged(EMovementMode Previ
 			case (uint8)ECustomMovementMode::CMOVE_ClimbLadder:
 			{
 				CurrentLadder = nullptr;
-				ToLadderRotator = FRotator(0, GetOwner()->GetActorRotation().Yaw, 0);
-				CachedBaseCharacter->bUseControllerRotationYaw = false;
+				ToLadderRotator = FRotator(0, CachedBaseCharacter->GetControlRotation().Yaw, 0);
+				//CachedBaseCharacter->bUseControllerRotationYaw = false;
 				bRotateToLadder = true;
 				if (MovementMode == MOVE_Custom && CustomMovementMode == (uint8)ECustomMovementMode::CMOVE_Mantling)
 				{
-					GetOwner()->SetActorRotation(ToLadderRotator);
-					CachedBaseCharacter->Controller->SetControlRotation(ToLadderRotator);
+					MoveUpdatedComponent( FVector::ZeroVector, ToLadderRotator, /*bSweep*/ false );
 					bRotateToLadder = false;
-					CachedBaseCharacter->bUseControllerRotationYaw = true;
 				}
 
 				break;
