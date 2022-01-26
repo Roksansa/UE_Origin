@@ -440,7 +440,7 @@ bool UOBaseCharacterMovementComponent::ShouldRemainVertical() const
 
 void UOBaseCharacterMovementComponent::BaseCharacterDefaultPhysRotation(float DeltaTime)
 {
-	if (CachedBaseCharacter->GetVelocity().IsZero() && !bOrientRotationToMovement)
+	if (CachedBaseCharacter->GetVelocity().IsZero() && !bOrientRotationToMovement && !bNeedRotationForFire)
 	{
 		return;
 	}
@@ -448,7 +448,7 @@ void UOBaseCharacterMovementComponent::BaseCharacterDefaultPhysRotation(float De
 	FRotator CurrentRotation = UpdatedComponent->GetComponentRotation(); // Normalized
 	CurrentRotation.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): CurrentRotation"));
 
-	FRotator DeltaRot = GetDeltaRotation(DeltaTime);
+	FRotator DeltaRot = GetDeltaRotation(bNeedRotationForFire ? 2*DeltaTime : DeltaTime);
 	DeltaRot.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): GetDeltaRotation"));
 
 	FRotator DesiredRotation = CharacterOwner->Controller->GetDesiredRotation();

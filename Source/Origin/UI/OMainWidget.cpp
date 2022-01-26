@@ -62,3 +62,8 @@ void UOMainWidget::NativeConstruct()
 		AmmoDescWidget = WidgetTree->FindWidget<UOAmmoDescWidget>(AmmoDescWidgetName);
 	}
 }
+
+void UOMainWidget::AnimDied()
+{
+	this->PlayAnimationForward(HidePlayerShowSpec);
+}

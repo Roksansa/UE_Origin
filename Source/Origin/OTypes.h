@@ -40,5 +40,6 @@ enum class EOPrimaryAttr : uint8
 {
 	Health,
 	Stamina,
+	Die,
 	MAX UMETA(Hidden)
 };

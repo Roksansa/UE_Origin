@@ -26,7 +26,9 @@ public:
 	void OnNotifyUpdatedAmmoWeapon(EOAmmoType Type, int CurrentCount, int MaxCount, bool Infinity);
 
 	virtual void NativeConstruct() override;
-
+	
+	UFUNCTION()
+	void AnimDied();
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName HealthWidgetName;
@@ -42,6 +44,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="WidgetName")
 	TMap<EOEquippableItemType, UOCrossHairWidget*> CrossHairWidgets;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* HidePlayerShowSpec;
 
 private:
 	UPROPERTY()

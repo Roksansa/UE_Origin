@@ -83,6 +83,7 @@ public:
 	const AOLadderInteractiveActor* GetCurrentLadder() const;
 	float GetClimbingLadderSpeedRatio() const;
 	float GetLadderToCharacterOffset() const;
+	bool bNeedRotationForFire = false;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Character Movement: Crawl" , meta=(ClampMin="0", UIMin="0"))
 	float MaxCrawlSpeed = 100.0f;

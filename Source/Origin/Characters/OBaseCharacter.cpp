@@ -420,6 +420,11 @@ void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* 
 			PrimaryAttributesComponent->UpdateStamina();
 			break;
 		}
+		case EOPrimaryAttr::Die:
+		{
+			PrimaryAttributesComponent->OnDie.AddUFunction(Object, Name);
+			break;
+		}
 		default: ;
 	}
 }

@@ -284,11 +284,12 @@ void AOPlayerCharacter::StartFire()
 		return;
 	}
 	bWantFire = true;
+	BaseCharacterMovementComponent->bNeedRotationForFire = bWantFire;
 	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
 	GetWorld()->GetTimerManager().SetTimer(CheckFireTimerHandle, [this]()
 	{
 		const bool bAllowFire = CanUseWeapon();
-
+		BaseCharacterMovementComponent->bNeedRotationForFire = bAllowFire && bWantFire;
 		if (bAllowFire && bWantFire && WeaponComponent->GetState() == EOWeaponUseState::Idle)
 		{
 			OnAllowFire.Broadcast(bAllowFire);
@@ -307,6 +308,7 @@ void AOPlayerCharacter::StopFire()
 	Super::StopFire();
 	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
 	bWantFire = false;
+	BaseCharacterMovementComponent->bNeedRotationForFire = false;
 }
 
 float AOPlayerCharacter::GetViewPitchMin() const
