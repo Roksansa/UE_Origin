@@ -33,6 +33,7 @@ void UOWidgetManagerComponent::BindWidgets(AOBaseCharacter* Character)
 	}
 	Character->OnChangeAiming.AddDynamic(MainWidget.Get(), &UOMainWidget::OnChangeAiming);
 	Character->GetOnNotifyChangeWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyChangeWeapon);
+	Character->GetOnNotifyUpdatedAmmoWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyUpdatedAmmoWeapon);
 	
 	bIsWidgetsBinded = true;
 }

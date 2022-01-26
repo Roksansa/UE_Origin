@@ -33,6 +33,7 @@ struct ORIGIN_API FOAmmoData
 
 DECLARE_MULTICAST_DELEGATE(FOnMakeShot);
 DECLARE_MULTICAST_DELEGATE(FOnStopFire);
+DECLARE_MULTICAST_DELEGATE(FOnChangeBullets);
 DECLARE_MULTICAST_DELEGATE(FOnWasOutOfBullets);
 
 UCLASS(Abstract, NotBlueprintable)
@@ -57,6 +58,7 @@ public:
 	FOnMakeShot OnMakeShot;
 	FOnWasOutOfBullets OnWasOutOfBullets;
 	FOnStopFire OnStopFire;
+	FOnChangeBullets OnChangeBullets;
 	bool IsAmmoEmpty() const;
 	const FOAmmoData& GetAmmoData() const;
 	int32 GetCountBullets() const;

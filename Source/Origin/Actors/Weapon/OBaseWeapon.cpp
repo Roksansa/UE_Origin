@@ -157,6 +157,7 @@ float AOBaseWeapon::PlayAnimMontage(UAnimMontage* AnimMontage, float InPlayRate,
 void AOBaseWeapon::DecreaseAmmo()
 {
 	CurrentBullets--;
+	OnChangeBullets.Broadcast();
 }
 
 bool AOBaseWeapon::IsAmmoEmpty() const
@@ -178,7 +179,12 @@ bool AOBaseWeapon::SetCountBullets(int32 NewCount)
 {
 	const int32 TempCount = CurrentBullets;
 	CurrentBullets = FMath::Clamp(CurrentBullets + NewCount, 0, DefaultAmmo.BulletsInClip);
-	return TempCount == CurrentBullets - NewCount;
+	const bool bChange = TempCount == CurrentBullets - NewCount || TempCount != CurrentBullets;
+	if (bChange)
+	{
+		OnChangeBullets.Broadcast();
+	}
+	return bChange;
 }
 
 bool AOBaseWeapon::IsAutoReload() const

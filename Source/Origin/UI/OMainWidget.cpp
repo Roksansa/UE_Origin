@@ -44,3 +44,21 @@ void UOMainWidget::OnNotifyChangeWeapon(EOEquippableItemType EquippableItem)
 		}
 	}
 }
+
+void UOMainWidget::OnNotifyUpdatedAmmoWeapon(EOAmmoType Type, int CurrentCount, int MaxCount, bool Infinity)
+{
+	if (AmmoDescWidget)
+	{
+		AmmoDescWidget->UpdateAmmoWeapon(Type, CurrentCount, MaxCount, Infinity);
+	}
+}
+
+void UOMainWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (!AmmoDescWidget)
+	{
+		AmmoDescWidget = WidgetTree->FindWidget<UOAmmoDescWidget>(AmmoDescWidgetName);
+	}
+}

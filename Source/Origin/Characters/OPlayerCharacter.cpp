@@ -39,6 +39,7 @@ void AOPlayerCharacter::BeginPlay()
 	if (CurrentPlayerController != nullptr)
 	{
 		CurrentPlayerController->BindWidgets();
+		WeaponComponent->OnUpdateAmmo();
 	}
 	CurrentFOV = CameraComponent->FieldOfView;
 }
@@ -89,7 +90,7 @@ void AOPlayerCharacter::MoveForward(float Value)
 
 void AOPlayerCharacter::TurnAtRate(float Value)
 {
-	if (!FMath::IsNearlyZero(Value, 1E-06f) && !BaseCharacterMovementComponent->IsClimbingLadder())
+	if (!FMath::IsNearlyZero(Value, 1E-06f) /*&& !BaseCharacterMovementComponent->IsClimbingLadder()*/)
 	{
 		AddControllerYawInput(Value * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 	}
@@ -234,7 +235,6 @@ void AOPlayerCharacter::OnStartSwimming(float HalfHeightAdjust, float ScaledHeig
 {
 	Super::OnStartSwimming(HalfHeightAdjust, ScaledHeightAdjust);
 
-	bUseControllerRotationYaw = false;
 	BaseCharacterMovementComponent->bOrientRotationToMovement = true;
 
 	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(GetClass());
@@ -252,8 +252,7 @@ void AOPlayerCharacter::OnStartSwimming(float HalfHeightAdjust, float ScaledHeig
 void AOPlayerCharacter::OnEndSwimming(float HalfHeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnEndSwimming(HalfHeightAdjust, ScaledHeightAdjust);
-
-	bUseControllerRotationYaw = true;
+	
 	BaseCharacterMovementComponent->bOrientRotationToMovement = false;
 
 	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(GetClass());

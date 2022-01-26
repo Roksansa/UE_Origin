@@ -106,7 +106,8 @@ void UOWeaponComponent::SpawnWeapons()
 			Weapon->bComplexTrace = bComplexTrace;
 			Weapon->OnMakeShot.AddUObject(this, &UOWeaponComponent::EndFire);
 			Weapon->OnWasOutOfBullets.AddUObject(this, &UOWeaponComponent::Reload);
-			Weapon->OnMakeShot.AddUObject(this, &UOWeaponComponent::AmmoDesc);
+			Weapon->OnChangeBullets.AddUObject(this, &UOWeaponComponent::AmmoDesc);
+			Weapon->OnChangeBullets.AddUObject(this, &UOWeaponComponent::OnUpdateAmmo);
 			Weapon->OnStopFire.AddUObject(this, &UOWeaponComponent::ResetFireInWeapon);
 		}
 	}
@@ -240,6 +241,10 @@ bool UOWeaponComponent::AddAmmo(const EOAmmoType& Type, int32 Count)
 	}
 
 	CurrentAmmo[AmmoIndex].BulletsCount = FMath::Clamp(CurrentAmmo[AmmoIndex].BulletsCount + Count, 0, BulletsCountMax);
+	if (CurrentWeapon && CurrentWeapon->GetAmmoData().AmmoType == Type)
+	{
+		OnUpdateAmmo();
+	}
 	return true;
 }
 
@@ -325,7 +330,6 @@ void UOWeaponComponent::OnFinishReload(int32 ReloadCount, bool bUseReloadCount)
 		CurrentAmmo[AmmoIndex].BulletsCount -= AddCount;
 	}
 	CurrentWeapon->SetCountBullets(AddCount);
-	AmmoDesc();
 
 	if (!bUseReloadCount)
 	{
@@ -400,6 +404,17 @@ void UOWeaponComponent::AmmoDesc()
 		CurrentBullets, AmmoDescriptions[AmmoType].BulletsCount, AmmoDescriptions[AmmoType].Infinity);
 }
 
+void UOWeaponComponent::OnUpdateAmmo()
+{
+	if (CurrentWeapon)
+	{
+		const EOAmmoType AmmoType = CurrentWeapon->GetAmmoData().AmmoType;
+		OnNotifyUpdatedAmmoWeapon.Broadcast(AmmoType, CurrentWeapon->GetCountBullets(), CurrentAmmo[GetAmmoIndex(AmmoType)].BulletsCount, AmmoDescriptions[AmmoType].Infinity);
+		return;
+	}
+	OnNotifyUpdatedAmmoWeapon.Broadcast(EOAmmoType::None, 0, 0, false);
+}
+
 void UOWeaponComponent::EndFire() const
 {
 	const FOWeaponAnimDescription Desc = GetWeaponAnimDescription();
@@ -436,6 +451,7 @@ void UOWeaponComponent::OnFinishEquip(bool bIsOldWeapon)
 	CurrentWeapon = ArmoryWeapons[CurrentIndex];
 	AttachWeaponToSocket(CurrentWeapon, Character->GetMesh(), WeaponSocketName);
 	OnNotifyChangeWeapon.Broadcast(GetWeaponType());
+	OnUpdateAmmo();
 }
 
 void UOWeaponComponent::ResetFireInWeapon()

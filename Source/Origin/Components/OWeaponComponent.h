@@ -54,6 +54,7 @@ enum class EOWeaponUseState : uint8
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyFinishEquip, bool);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnNotifyFinishReload, int32, bool);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNotifyChangeWeapon, EOEquippableItemType);
+DECLARE_MULTICAST_DELEGATE_FourParams(FOnNotifyUpdatedAmmoWeapon, EOAmmoType, int, int, bool);
 
 class AOBaseWeapon;
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
@@ -83,6 +84,7 @@ public:
 	
 	bool AddAmmo(const EOAmmoType& Type, int32 Count);
 	void ReloadAmmo();
+	
 
 	EOWeaponUseState GetState() const;
 	bool GetAiming() const;
@@ -90,7 +92,9 @@ public:
 	float GetCurrentAimingFOV() const;
 
 	FOnNotifyChangeWeapon OnNotifyChangeWeapon;
-	
+	FOnNotifyUpdatedAmmoWeapon OnNotifyUpdatedAmmoWeapon;
+
+	void OnUpdateAmmo();
 protected:
 
 	FOnNotifyFinishEquip OnNotifyFinishEquip;

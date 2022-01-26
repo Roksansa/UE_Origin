@@ -429,6 +429,11 @@ FOnNotifyChangeWeapon& AOBaseCharacter::GetOnNotifyChangeWeapon()
 	return WeaponComponent->OnNotifyChangeWeapon;
 }
 
+FOnNotifyUpdatedAmmoWeapon& AOBaseCharacter::GetOnNotifyUpdatedAmmoWeapon()
+{
+	return WeaponComponent->OnNotifyUpdatedAmmoWeapon;
+}
+
 
 void AOBaseCharacter::OnDie()
 {

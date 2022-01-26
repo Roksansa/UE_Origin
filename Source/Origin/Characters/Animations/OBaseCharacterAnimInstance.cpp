@@ -75,7 +75,7 @@ void UOBaseCharacterAnimInstance::CalcDirection()
 		return;
 	}
 	const FVector VelocityNormal = CurrentCharacter->GetVelocity().GetSafeNormal();
-	const FVector ForwardVector = CurrentCharacter->GetActorForwardVector();
+	const FVector ForwardVector = CurrentCharacter->GetControlRotation().Vector();
 	const float DotProduct = FVector::DotProduct(ForwardVector, VelocityNormal);
 	const FVector CrossProduct = FVector::CrossProduct(ForwardVector, VelocityNormal);
 	const float Degree = UKismetMathLibrary::DegAcos(DotProduct);

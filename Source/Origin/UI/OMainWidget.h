@@ -3,7 +3,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OAmmoDescWidget.h"
 #include "OTypes.h"
+#include "Actors/Weapon/OBaseWeapon.h"
 #include "Blueprint/UserWidget.h"
 #include "OMainWidget.generated.h"
 
@@ -21,12 +23,17 @@ public:
 	UFUNCTION()
 	void OnChangeAiming(bool bIsAiming);
 	void OnNotifyChangeWeapon(EOEquippableItemType EquippableItem);
+	void OnNotifyUpdatedAmmoWeapon(EOAmmoType Type, int CurrentCount, int MaxCount, bool Infinity);
+
+	virtual void NativeConstruct() override;
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName HealthWidgetName;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName StaminaWidgetName;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
+	FName AmmoDescWidgetName;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="EventName")
 	FName OnHealthChangedName = FName("OnPrimaryAttrChanged");
@@ -39,4 +46,7 @@ protected:
 private:
 	UPROPERTY()
 	UOCrossHairWidget* CurrentCrossHairWidget;
+
+	UPROPERTY()
+	UOAmmoDescWidget* AmmoDescWidget;
 };

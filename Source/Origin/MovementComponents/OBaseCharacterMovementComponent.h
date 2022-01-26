@@ -51,6 +51,7 @@ public:
 	virtual void UpdateCharacterStateBeforeMovement(float DeltaSeconds) override;
 	virtual void UpdateCharacterStateAfterMovement(float DeltaSeconds) override;
 	virtual bool ShouldRemainVertical() const override;
+	virtual void BaseCharacterDefaultPhysRotation(float DeltaTime);
 	virtual void PhysicsRotation(float DeltaTime) override;
 
 	virtual float GetMaxSpeed() const override;

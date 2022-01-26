@@ -107,6 +107,7 @@ public:
 	FOnChangeAiming OnChangeAiming;
 
 	FOnNotifyChangeWeapon& GetOnNotifyChangeWeapon();
+	FOnNotifyUpdatedAmmoWeapon& GetOnNotifyUpdatedAmmoWeapon();
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
