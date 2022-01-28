@@ -102,3 +102,31 @@ void UOPrimaryAttributesComponent::UpdateStamina() const
 	OnChangeStamina.Broadcast(CurrentStamina, 0, MaxStamina);
 }
 
+bool UOPrimaryAttributesComponent::TryAddHealth(int32 Value)
+{
+	if (Value > 0.f && CurrentHealth > SMALL_NUMBER && !FMath::IsNearlyEqual(CurrentHealth, MaxHealth))
+	{
+		const float PrevHealth = CurrentHealth;
+		CurrentHealth = FMath::Clamp(CurrentHealth + Value, 0.f, MaxHealth);
+
+		Value = CurrentHealth - PrevHealth;
+		OnChangeHealth.Broadcast(CurrentHealth, Value, MaxHealth);
+		return true;
+	}
+	return false;
+}
+
+bool UOPrimaryAttributesComponent::TryAddStamina(int32 Value)
+{
+	if (Value > 0.f && !FMath::IsNearlyEqual(CurrentStamina, MaxStamina))
+	{
+		const float PrevStamina = CurrentStamina;
+		CurrentStamina = FMath::Clamp(CurrentStamina + Value, 0.f, MaxStamina);
+
+		Value = CurrentStamina - PrevStamina;
+		OnChangeStamina.Broadcast(CurrentStamina, Value, MaxStamina);
+		return true;
+	}
+	return false;
+}
+

@@ -43,3 +43,13 @@ enum class EOPrimaryAttr : uint8
 	Die,
 	MAX UMETA(Hidden)
 };
+
+
+UENUM(BlueprintType)
+enum class EOBoostingType : uint8
+{
+	None,
+	Health,
+	Stamina,
+	MAX UMETA(Hidden)
+};

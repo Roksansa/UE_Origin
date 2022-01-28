@@ -439,6 +439,30 @@ FOnNotifyUpdatedAmmoWeapon& AOBaseCharacter::GetOnNotifyUpdatedAmmoWeapon()
 	return WeaponComponent->OnNotifyUpdatedAmmoWeapon;
 }
 
+bool AOBaseCharacter::TryAddAmmo(const EOAmmoType& Type, int32 Count)
+{
+	return WeaponComponent->AddAmmo(Type, Count);
+}
+
+bool AOBaseCharacter::TryAddBoosters(const EOBoostingType& Type, int32 Value)
+{
+	bool bResult = false;
+	switch (Type)
+	{
+		case EOBoostingType::Health:
+		{
+			bResult = PrimaryAttributesComponent->TryAddHealth(Value);
+			break;
+		}
+		case EOBoostingType::Stamina:
+		{
+			bResult = PrimaryAttributesComponent->TryAddStamina(Value);
+		}
+		default: ;
+	}
+	return bResult;
+}
+
 
 void AOBaseCharacter::OnDie()
 {

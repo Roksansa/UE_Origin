@@ -28,6 +28,10 @@ public:
 	bool GetIsOutOfStamina() const;
 	void UpdateHealth() const;
 	void UpdateStamina() const;
+
+	/**if need take damage - used owner's method OnTakeAnyDamage */
+	bool TryAddHealth(int32 Value);
+	bool TryAddStamina(int32 Value);
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
