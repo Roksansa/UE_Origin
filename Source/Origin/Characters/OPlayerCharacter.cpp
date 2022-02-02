@@ -326,3 +326,26 @@ void AOPlayerCharacter::OnDie()
 	Super::OnDie();
 	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
 }
+
+void AOPlayerCharacter::OnChangeHealth(float Health, float Diff, float MaxValue)
+{
+	Super::OnChangeHealth(Health, Diff, MaxValue);
+	if (Diff < 0)
+	{
+		PlayCameraShake();
+	}
+}
+
+void AOPlayerCharacter::PlayCameraShake() const
+{
+	if (PrimaryAttributesComponent->IsDead())
+	{
+		return;
+	}
+	const APlayerController* PController = GetController<APlayerController>();
+	if (!PController || !PController->PlayerCameraManager)
+	{
+		return;
+	}
+	PController->PlayerCameraManager->PlayCameraShake(CameraShake);
+}

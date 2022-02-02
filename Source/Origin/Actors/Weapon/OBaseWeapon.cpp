@@ -106,13 +106,10 @@ void AOBaseWeapon::MakeHit(FHitResult& HitResult, const FVector TraceStart, cons
 
 	FCollisionQueryParams CollisionQueryParams;
 	CollisionQueryParams.AddIgnoredActor(GetOwner());
+	CollisionQueryParams.bReturnPhysicalMaterial = true;
 	
 	const FVector MuzzleLocation = GetMuzzleWorldLocation();
 	GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Firing, CollisionQueryParams);
-	if (HitResult.bBlockingHit)
-	{
-		DrawDebugLine(GetWorld(), MuzzleLocation, HitResult.ImpactPoint, FColor::Green, false, 3.f, 0, 3.f);
-	}
 
 	if (bComplexTrace)
 	{
@@ -122,9 +119,6 @@ void AOBaseWeapon::MakeHit(FHitResult& HitResult, const FVector TraceStart, cons
 		GetWorld()->LineTraceSingleByChannel(HitResultNew, MuzzleLocation, NewTraceEnd, ECC_Firing, CollisionQueryParams);
 		HitResult = HitResultNew.bBlockingHit ? HitResultNew : HitResult;   
 	}
-	
-	DrawDebugSphere(GetWorld(), HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd, bComplexTrace ? 15.f : 10.f, 24, bComplexTrace ? FColor::Cyan : FColor::Magenta, false, 5.f);
-	DrawDebugLine(GetWorld(), MuzzleLocation, HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd , FColor::Orange, false, 3.f, 0, 3.f);
 }
 
 void AOBaseWeapon::PlayVisibleShot()

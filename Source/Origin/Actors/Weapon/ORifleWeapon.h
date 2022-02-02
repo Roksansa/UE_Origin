@@ -21,8 +21,14 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Components|WeaponParams")
 	float TimerBetweenShots = 0.1f;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Components|WeaponParams|VFX")
+	UNiagaraSystem* TraceEffect;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Components|WeaponParams|VFX")
+	FString TraceTargetName = "TraceTarget";
 
 	virtual void MakeShot() override;
 private:
 	FTimerHandle ShotTimerHandle;
+	void SpawnTraceEffect(const FVector& TraceStart, const FVector& TraceEnd);
 };

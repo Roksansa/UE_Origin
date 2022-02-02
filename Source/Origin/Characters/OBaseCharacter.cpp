@@ -400,7 +400,7 @@ bool AOBaseCharacter::IsWeaponInHand() const
 	return WeaponComponent->GetWeaponType() != EOEquippableItemType::None;
 }
 
-void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name)
+void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name, bool bWithUpdate)
 {
 	if (!IsValid(Object))
 	{
@@ -411,13 +411,19 @@ void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* 
 		case EOPrimaryAttr::Health:
 		{
 			PrimaryAttributesComponent->OnChangeHealth.AddUFunction(Object, Name);
-			PrimaryAttributesComponent->UpdateHealth();
+			if (bWithUpdate)
+			{
+				PrimaryAttributesComponent->UpdateHealth();
+			}
 			break;
 		}
 		case EOPrimaryAttr::Stamina:
 		{
 			PrimaryAttributesComponent->OnChangeStamina.AddUFunction(Object, Name);
-			PrimaryAttributesComponent->UpdateStamina();
+			if (bWithUpdate)
+			{
+				PrimaryAttributesComponent->UpdateStamina();
+			}
 			break;
 		}
 		case EOPrimaryAttr::Die:
@@ -480,7 +486,7 @@ void AOBaseCharacter::OnDie()
 
 void AOBaseCharacter::OnChangeHealth(float Health, float Diff, float MaxValue)
 {
-	if (Health > SMALL_NUMBER && Diff < 0)
+	if (!PrimaryAttributesComponent->IsDead() && Diff < 0)
 	{
 		const FOWeaponAnimDescription Desc = WeaponComponent->GetWeaponAnimDescription();
 		PlayAnimMontage(Desc.HitAnimMontage);

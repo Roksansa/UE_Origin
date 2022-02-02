@@ -8,6 +8,7 @@
 #include "OBaseWeapon.generated.h"
 
 class USkeletalMeshComponent;
+class UNiagaraSystem;
 
 UENUM(BlueprintType)
 enum class EOAmmoType : uint8
@@ -77,6 +78,10 @@ protected:
 	float DamageAmount = 10.f;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components|WeaponParams")
 	UAnimMontage* FireAnimMontage;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components|WeaponParams|VFX")
+	FOImpactData DefaultImpactData;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components|WeaponParams|VFX")
+	TMap<UPhysicalMaterial*, FOImpactData> ImpactsByPhys;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Components|WeaponParams")
 	FOAmmoData DefaultAmmo = FOAmmoData{30, EOAmmoType::Rifle};

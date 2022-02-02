@@ -67,3 +67,11 @@ void UOMainWidget::AnimDied()
 {
 	this->PlayAnimationForward(HidePlayerShowSpec);
 }
+
+void UOMainWidget::OnHealthChanged(float CurrentValue, float Diff, float MaxValue)
+{
+	if (Diff < 0)
+	{
+		this->PlayAnimationForward(ShowBlood);
+	}
+}

@@ -29,6 +29,8 @@ public:
 	
 	UFUNCTION()
 	void AnimDied();
+	UFUNCTION()
+	void OnHealthChanged(float CurrentValue, float Diff, float MaxValue);
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName HealthWidgetName;
@@ -47,6 +49,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
 	UWidgetAnimation* HidePlayerShowSpec;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* ShowBlood;
 
 private:
 	UPROPERTY()

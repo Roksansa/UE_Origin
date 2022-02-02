@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OLauncherWeapon.h"
 #include "GameFramework/Actor.h"
 #include "OProjectile.generated.h"
 
@@ -20,6 +21,7 @@ public:
 
 	void SetShotDirection(const FVector& Vector);
 	void SetDamageAmount(float Value);
+	void SetNiagaraEffect(const FOImpactData& DefaultImpactData, const TMap<UPhysicalMaterial*, FOImpactData>& ImpactsMap);
 protected:
 
 	UPROPERTY(VisibleDefaultsOnly, Category = "Weapon")
@@ -36,14 +38,17 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float LifeSeconds = 5.f;
-
 	virtual void BeginPlay() override;
 
 private:
 	FVector ShotDirection;
 	
 	float DamageAmount = 70.f;
+	
+	FOImpactData DefaultSpawnEffect;
 
+	const TMap<UPhysicalMaterial*, FOImpactData>* SpawnEffects;
+	
 	UFUNCTION()
 	void OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 };

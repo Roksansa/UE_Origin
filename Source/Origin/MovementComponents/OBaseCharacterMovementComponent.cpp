@@ -448,7 +448,7 @@ void UOBaseCharacterMovementComponent::BaseCharacterDefaultPhysRotation(float De
 	FRotator CurrentRotation = UpdatedComponent->GetComponentRotation(); // Normalized
 	CurrentRotation.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): CurrentRotation"));
 
-	FRotator DeltaRot = GetDeltaRotation(bNeedRotationForFire ? 2*DeltaTime : DeltaTime);
+	FRotator DeltaRot = GetDeltaRotation(bNeedRotationForFire ? 4*DeltaTime : DeltaTime);
 	DeltaRot.DiagnosticCheckNaN(TEXT("CharacterMovementComponent::PhysicsRotation(): GetDeltaRotation"));
 
 	FRotator DesiredRotation = CharacterOwner->Controller->GetDesiredRotation();

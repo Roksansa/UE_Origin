@@ -29,9 +29,10 @@ void UOWidgetManagerComponent::BindWidgets(AOBaseCharacter* Character)
 	for (int32 i = 0; i < PrimaryAttrEnum->NumEnums() - 2; i++)
 	{
 		const EOPrimaryAttr PrimaryAttr = static_cast<EOPrimaryAttr>(i);
-		Character->BindOnChangePrimaryAttribute(PrimaryAttr, MainWidget->GetAttrWidget(PrimaryAttr), MainWidget->GetAttrEventName(PrimaryAttr));
+		Character->BindOnChangePrimaryAttribute(PrimaryAttr, MainWidget->GetAttrWidget(PrimaryAttr), MainWidget->GetAttrEventName(PrimaryAttr), true);
 	}
-	Character->BindOnChangePrimaryAttribute(EOPrimaryAttr::Die, MainWidget.Get(), "AnimDied");
+	Character->BindOnChangePrimaryAttribute(EOPrimaryAttr::Die, MainWidget.Get(), AnimDiedName);
+	Character->BindOnChangePrimaryAttribute(EOPrimaryAttr::Health, MainWidget.Get(), OnHealthChangedName);
 	Character->OnChangeAiming.AddDynamic(MainWidget.Get(), &UOMainWidget::OnChangeAiming);
 	Character->GetOnNotifyChangeWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyChangeWeapon);
 	Character->GetOnNotifyUpdatedAmmoWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyUpdatedAmmoWeapon);

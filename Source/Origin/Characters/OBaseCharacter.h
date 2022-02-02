@@ -101,7 +101,7 @@ public:
 	const UOWeaponComponent* GetWeaponComponent() const;
 	bool IsWeaponInHand() const;
 	
-	void BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name);
+	void BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name, bool bWithUpdate = false);
 
 	UPROPERTY(BlueprintAssignable)
 	FOnChangeAiming OnChangeAiming;
@@ -159,7 +159,7 @@ protected:
 	virtual void OnDie();
 
 	UFUNCTION()
-	void OnChangeHealth(float Health, float Diff, float MaxValue);
+	virtual void OnChangeHealth(float Health, float Diff, float MaxValue);
 private:
 	void FillMantlingMovementParameters(struct FOLedgeDescription LedgeDescription, FOMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;

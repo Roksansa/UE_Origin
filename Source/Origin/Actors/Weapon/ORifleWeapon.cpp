@@ -3,6 +3,10 @@
 
 #include "ORifleWeapon.h"
 
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
+#include "Utils/OSpawnUtils.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogRifleWeapon, All, All);
 
 void AORifleWeapon::StartFire()
@@ -55,8 +59,19 @@ void AORifleWeapon::MakeShot()
 	if (HitResult.bBlockingHit)
 	{
 		MakeDamage(HitResult);
+		SpawnVFX(GetWorld(),HitResult, DefaultImpactData, ImpactsByPhys);
 	}
+	SpawnTraceEffect(GetMuzzleWorldLocation(), HitResult.bBlockingHit ? HitResult.ImpactPoint : TraceEnd);
 	OnMakeShot.Broadcast();
 	DecreaseAmmo();
 	GetWorldTimerManager().SetTimer(ShotTimerHandle, this, &AORifleWeapon::MakeShot, TimerBetweenShots, false);
+}
+
+void AORifleWeapon::SpawnTraceEffect(const FVector& TraceStart, const FVector& TraceEnd)
+{
+	const auto TraceComponent = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), TraceEffect, TraceStart);
+	if (TraceComponent)
+	{
+		TraceComponent->SetNiagaraVariableVec3(TraceTargetName, TraceEnd);
+	}
 }

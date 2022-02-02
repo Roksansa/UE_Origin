@@ -66,13 +66,18 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Crawling")
 	float LocationXMeshOffsetForCrawling = 50.f;
-	
-	virtual void OnDie() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Config|Camera")
 	float CurrentFOV = 90.f;
-	
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character|Camera")
+	TSubclassOf<UCameraShake> CameraShake;
+		
+	virtual void OnDie() override;
+	virtual void OnChangeHealth(float Health, float Diff, float MaxValue) override;
 private:
 	bool bWantFire = false;
 	FTimerHandle CheckFireTimerHandle;
+
+	void PlayCameraShake() const;
 };

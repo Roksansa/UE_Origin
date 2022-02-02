@@ -4,9 +4,12 @@
 #include "OProjectile.h"
 
 #include "DrawDebugHelpers.h"
+#include "NiagaraSystem.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Utils/OSpawnUtils.h"
 
 // Sets default values
 AOProjectile::AOProjectile()
@@ -18,6 +21,7 @@ AOProjectile::AOProjectile()
 	CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	CollisionComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	CollisionComponent->bReturnMaterialOnMove = true;
 	SetRootComponent(CollisionComponent);
 
 	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("MovementComponent"));
@@ -33,7 +37,7 @@ void AOProjectile::BeginPlay()
 	MovementComponent->Velocity = ShotDirection * MovementComponent->InitialSpeed;
 	CollisionComponent->OnComponentHit.AddDynamic(this, &AOProjectile::OnProjectileHit);
 	CollisionComponent->IgnoreActorWhenMoving(GetOwner(), true);
-	SetLifeSpan(5.f);
+	SetLifeSpan(LifeSeconds);
 }
 
 void AOProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -48,7 +52,7 @@ void AOProjectile::OnProjectileHit(UPrimitiveComponent* HitComponent, AActor* Ot
 	UGameplayStatics::ApplyRadialDamage(GetWorld(), DamageAmount, GetActorLocation(), DamageRadius, UDamageType::StaticClass(), {},
 		this, GetInstigatorController(), DoFullDamage);
 	DrawDebugSphere(GetWorld(), GetActorLocation(), DamageRadius, 24, FColor::Cyan, false, 3.f);
-	
+	SpawnVFX(GetWorld(), Hit, DefaultSpawnEffect, *SpawnEffects);
 	Destroy();
 }
 
@@ -60,4 +64,10 @@ void AOProjectile::SetShotDirection(const FVector& Vector)
 void AOProjectile::SetDamageAmount(float Value)
 {
 	DamageAmount = Value;
+}
+
+void AOProjectile::SetNiagaraEffect(const FOImpactData& DefaultImpactData, const TMap<UPhysicalMaterial*, FOImpactData>& ImpactsMap)
+{
+	DefaultSpawnEffect = DefaultImpactData;
+	SpawnEffects = &ImpactsMap;
 }

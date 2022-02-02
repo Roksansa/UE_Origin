@@ -130,3 +130,8 @@ bool UOPrimaryAttributesComponent::TryAddStamina(int32 Value)
 	return false;
 }
 
+bool UOPrimaryAttributesComponent::IsDead() const
+{
+	return CurrentHealth <= SMALL_NUMBER;
+}
+

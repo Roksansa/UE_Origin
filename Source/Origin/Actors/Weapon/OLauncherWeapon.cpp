@@ -5,7 +5,6 @@
 
 #include "OProjectile.h"
 #include "GameFramework/Character.h"
-#include "Kismet/GameplayStatics.h"
 
 void AOLauncherWeapon::StartFire()
 {
@@ -45,6 +44,7 @@ void AOLauncherWeapon::MakeShot()
 	{
 		Projectile->SetDamageAmount(DamageAmount);
 		Projectile->SetShotDirection(Direction);
+		Projectile->SetNiagaraEffect(DefaultImpactData, ImpactsByPhys);
 		Projectile->FinishSpawning(SpawnTransform);
 	}
 	OnMakeShot.Broadcast();
