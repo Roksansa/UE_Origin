@@ -33,6 +33,7 @@ void UOWeaponComponent::BeginPlay()
 
 void UOWeaponComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
 	CurrentWeapon = nullptr;
 	for (auto Weapon : ArmoryWeapons)
 	{
@@ -270,7 +271,7 @@ void UOWeaponComponent::InitAmmo()
 		const bool AmmoCheckCond = AmmoDescriptions.Contains(EnumType);
 		checkf(AmmoCheckCond, TEXT("AmmoDesc for %s doesn't exist"), *EnumTypeName);
 		CurrentAmmo.Add(FOAmmoDescription{0, AmmoDescriptions[EnumType].Infinity});
-		CurrentAmmo[i-AmmoStart].BulletsCount = 10;
+		CurrentAmmo[i-AmmoStart].BulletsCount = FMath::Min(10, AmmoDescriptions[EnumType].BulletsCount);
 	}
 }
 
@@ -299,7 +300,9 @@ bool UOWeaponComponent::CanReload() const
 	if (MainCondition)
 	{
 		const int32 AmmoIndex = GetAmmoIndex(CurrentWeapon->GetAmmoData().AmmoType);
-		return CurrentAmmo[AmmoIndex].Infinity || CurrentAmmo[AmmoIndex].BulletsCount > 0;
+		const int32 BulletsInClip = CurrentWeapon->GetAmmoData().BulletsInClip;
+		const int32 NeedBulletsCount = BulletsInClip - CurrentWeapon->GetCountBullets();
+		return (CurrentAmmo[AmmoIndex].Infinity || CurrentAmmo[AmmoIndex].BulletsCount > 0) && NeedBulletsCount > 0;
 	}
 
 	return false;
@@ -413,6 +416,23 @@ void UOWeaponComponent::OnUpdateAmmo()
 		return;
 	}
 	OnNotifyUpdatedAmmoWeapon.Broadcast(EOAmmoType::None, 0, 0, false);
+}
+
+const AOBaseWeapon* UOWeaponComponent::GetWeapon() const
+{
+	return CurrentWeapon;
+}
+
+bool UOWeaponComponent::CanAmmoAnyWeapon() const
+{
+	for (const auto Ammo : CurrentAmmo)
+	{
+		if (Ammo.Infinity || Ammo.BulletsCount > 0)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void UOWeaponComponent::EndFire() const

@@ -110,6 +110,7 @@ public:
 	FOnNotifyUpdatedAmmoWeapon& GetOnNotifyUpdatedAmmoWeapon();
 	bool TryAddAmmo(const EOAmmoType& Type, int32 Count);
 	bool TryAddBoosters(const EOBoostingType& Type, int32 Value);
+	bool IsDie() const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;

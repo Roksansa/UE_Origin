@@ -91,10 +91,14 @@ public:
 	UFUNCTION(BlueprintCallable)
 	float GetCurrentAimingFOV() const;
 
+	bool CanReload() const;
+
 	FOnNotifyChangeWeapon OnNotifyChangeWeapon;
 	FOnNotifyUpdatedAmmoWeapon OnNotifyUpdatedAmmoWeapon;
 
 	void OnUpdateAmmo();
+	const AOBaseWeapon* GetWeapon() const;
+	bool CanAmmoAnyWeapon() const;
 protected:
 
 	FOnNotifyFinishEquip OnNotifyFinishEquip;
@@ -143,7 +147,6 @@ private:
 	void AttachWeaponToSocket(AOBaseWeapon* Weapon, USkeletalMeshComponent* Mesh, const FName& EquipSocketName);
 	bool CanFire() const;
 	void EquipWeapon(int WeaponIndex);
-	bool CanReload() const;
 	int GetAmmoIndex(EOAmmoType AmmoType) const;
 	UFUNCTION()
 	void OnFinishReload(int32 ReloadCount, bool bUseReloadCount);

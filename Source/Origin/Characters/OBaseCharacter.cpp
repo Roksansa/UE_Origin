@@ -469,9 +469,15 @@ bool AOBaseCharacter::TryAddBoosters(const EOBoostingType& Type, int32 Value)
 	return bResult;
 }
 
+bool AOBaseCharacter::IsDie() const
+{
+	return PrimaryAttributesComponent->IsDead();
+}
+
 
 void AOBaseCharacter::OnDie()
 {
+	StopAnimMontage();
 	PlayAnimMontage(DeathAnimMontage);
 	GetCharacterMovement()->DisableMovement();
 	GetController()->DisableInput(nullptr);

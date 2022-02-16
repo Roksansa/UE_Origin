@@ -13,7 +13,10 @@ public class Origin : ModuleRules
 			"Engine",
 			"InputCore",
 			"Niagara",
-			"PhysicsCore" });
+			"PhysicsCore",
+			"GameplayTasks",
+			"NavigationSystem",
+		});
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
 				"GameplayAbilities",

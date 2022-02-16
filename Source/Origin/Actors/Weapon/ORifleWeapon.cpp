@@ -26,7 +26,19 @@ void AORifleWeapon::StartFire()
 void AORifleWeapon::StopFire()
 {
 	Super::StopFire();
-	GetWorldTimerManager().ClearTimer(ShotTimerHandle);
+	if (GetWorldTimerManager().GetTimerElapsed(ShotTimerHandle) > 0.f)
+	{
+		const float TimerLeft = GetWorldTimerManager().GetTimerRate(ShotTimerHandle) - GetWorldTimerManager().GetTimerElapsed(ShotTimerHandle);
+		GetWorldTimerManager().SetTimer(ShotTimerHandle,
+			[this](){
+			GetWorldTimerManager().ClearTimer(ShotTimerHandle);
+			}
+			, TimerLeft, false);
+	}
+	else
+	{
+		GetWorldTimerManager().ClearTimer(ShotTimerHandle);
+	}
 }
 
 void AORifleWeapon::MakeShot()

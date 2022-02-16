@@ -112,8 +112,7 @@ protected:
 	virtual FVector GetShootDirection(const FVector& ViewRotationVector) const;
 	virtual void PlayVisibleShot();
 	
-	APlayerController* GetPlayerController() const;
-	bool GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const;
+	bool GetCharacterViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const;
 	FVector GetMuzzleWorldLocation() const;
 	bool GetTraceData(FVector& TraceStart, FVector& TraceEnd) const;
 	void MakeHit(FHitResult& HitResult, const FVector TraceStart, const FVector TraceEnd) const;

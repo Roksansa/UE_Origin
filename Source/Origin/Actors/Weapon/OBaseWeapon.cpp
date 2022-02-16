@@ -3,6 +3,7 @@
 
 #include "OBaseWeapon.h"
 
+#include "AIController.h"
 #include "DrawDebugHelpers.h"
 #include "OTypes.h"
 #include "Components/SkeletalMeshComponent.h"
@@ -45,26 +46,25 @@ EOEquippableItemType AOBaseWeapon::GetItemType() const
 	return EquippableItemType;
 }
 
-APlayerController* AOBaseWeapon::GetPlayerController() const
+bool AOBaseWeapon::GetCharacterViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const
 {
-	const ACharacter* Player = Cast<ACharacter>(GetOwner());
-	if (!Player)
-	{
-		return nullptr;
-	}
-
-	return Player->GetController<APlayerController>();
-}
-
-bool AOBaseWeapon::GetPlayerViewPoint(FVector& ViewLocation, FRotator& ViewRotation) const
-{
-	const APlayerController* Controller = GetPlayerController();
-	if (!Controller)
+	const ACharacter* Character = Cast<ACharacter>(GetOwner());
+	if (!Character)
 	{
 		return false;
 	}
-
-	Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
+	
+	if (Character->IsPlayerControlled())
+	{
+		const APlayerController* Controller = Character->GetController<APlayerController>();
+		Controller->GetPlayerViewPoint(ViewLocation, ViewRotation);
+	}
+	else
+	{
+		ViewLocation = GetMuzzleWorldLocation();
+		ViewRotation = WeaponMesh->GetSocketRotation(MuzzleSocketName);
+	}
+	
 	return true;
 }
 
@@ -83,7 +83,7 @@ bool AOBaseWeapon::GetTraceData(FVector& TraceStart, FVector& TraceEnd) const
 {
 	FVector ViewLocation;
 	FRotator ViewRotation;
-	const bool bInit = GetPlayerViewPoint(ViewLocation, ViewRotation);
+	const bool bInit = GetCharacterViewPoint(ViewLocation, ViewRotation);
 	if (!bInit)
 	{
 		return false;
