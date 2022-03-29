@@ -33,6 +33,7 @@ public:
 	bool TryAddHealth(int32 Value);
 	bool TryAddStamina(int32 Value);
 	bool IsDead() const;
+	float GetCurrentHealthPercent() const;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;

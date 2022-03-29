@@ -25,4 +25,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="AI")
 	UBehaviorTree* BehaviorTree;
+
+	const UOPrimaryAttributesComponent* GetPrimaryAttributesComponent() const;
+protected:
+	virtual void OnDie() override;
 };

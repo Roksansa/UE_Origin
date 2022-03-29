@@ -43,5 +43,8 @@ void AOAIController::UpdateRotation()
 	{
 		FindActor = Cast<AActor>(Blackboard->GetValueAsObject(EnemyKeyInBlackboard));
 	}
-	SetFocus(FindActor);
+	if (FindActor)
+	{
+		SetFocus(FindActor);
+	}
 }

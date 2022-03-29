@@ -3,6 +3,9 @@
 
 #include "OAICharacter.h"
 
+#include "AIController.h"
+#include "BrainComponent.h"
+
 AOAICharacter::AOAICharacter(const FObjectInitializer& ObjectInitializer)
 {
 }
@@ -53,4 +56,19 @@ bool AOAICharacter::TryChangeOrReload(bool bCheckAmmoEmpty)
 		}
 	}
 	return false;
+}
+
+const UOPrimaryAttributesComponent* AOAICharacter::GetPrimaryAttributesComponent() const
+{
+	return PrimaryAttributesComponent;
+}
+
+void AOAICharacter::OnDie()
+{
+	Super::OnDie();
+	const AAIController* AIController = Cast<AAIController>(Controller);
+	if (AIController && AIController->BrainComponent)
+	{
+		AIController->BrainComponent->Cleanup();
+	}
 }

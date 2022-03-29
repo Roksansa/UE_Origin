@@ -135,3 +135,8 @@ bool UOPrimaryAttributesComponent::IsDead() const
 	return CurrentHealth <= SMALL_NUMBER;
 }
 
+float UOPrimaryAttributesComponent::GetCurrentHealthPercent() const
+{
+	return CurrentHealth / MaxHealth;
+}
+

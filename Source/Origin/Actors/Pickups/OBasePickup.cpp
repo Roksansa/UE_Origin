@@ -50,8 +50,8 @@ void AOBasePickup::TakePickup()
 
 void AOBasePickup::Respawn()
 {
-	CollisionComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 	GetRootComponent()->SetVisibility(true, true);
+	CollisionComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 }
 
 bool AOBasePickup::GivePickupTo(AOBaseCharacter* Character)
