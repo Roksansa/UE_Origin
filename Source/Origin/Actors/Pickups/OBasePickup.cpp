@@ -21,10 +21,16 @@ AOBasePickup::AOBasePickup()
 
 }
 
+bool AOBasePickup::IsVisibleActor() const
+{
+	return !bTakenPickup;
+}
+
 // Called when the game starts or when spawned
 void AOBasePickup::BeginPlay()
 {
 	Super::BeginPlay();
+	bTakenPickup = false;
 	check(CollisionComponent);
 }
 
@@ -32,7 +38,7 @@ void AOBasePickup::NotifyActorBeginOverlap(AActor* OtherActor)
 {
 	Super::NotifyActorBeginOverlap(OtherActor);
 	AOBaseCharacter* BaseCharacter = Cast<AOBaseCharacter>(OtherActor);
-	if (BaseCharacter && GivePickupTo(BaseCharacter))
+	if (BaseCharacter && !bTakenPickup && GivePickupTo(BaseCharacter))
 	{
 		TakePickup();
 		UE_LOG(LogPawn, Display, TEXT("Pickup was taken"));
@@ -41,6 +47,7 @@ void AOBasePickup::NotifyActorBeginOverlap(AActor* OtherActor)
 
 void AOBasePickup::TakePickup()
 {
+	bTakenPickup = true;
 	CollisionComponent->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	GetRootComponent()->SetVisibility(false, true);
 	FTimerHandle RespawnTimer;
@@ -50,6 +57,7 @@ void AOBasePickup::TakePickup()
 
 void AOBasePickup::Respawn()
 {
+	bTakenPickup = false;
 	GetRootComponent()->SetVisibility(true, true);
 	CollisionComponent->SetCollisionResponseToChannel(ECollisionChannel::ECC_Pawn, ECollisionResponse::ECR_Overlap);
 }

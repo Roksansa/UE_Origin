@@ -4,16 +4,21 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "Interfaces/OVisibleInterface.h"
 #include "OBasePickup.generated.h"
 
 UCLASS()
-class ORIGIN_API AOBasePickup : public AActor
+class ORIGIN_API AOBasePickup : public AActor, public IOVisibleInterface
 {
 	GENERATED_BODY()
 	
 public:	
 	AOBasePickup();
 
+	//----------------------------------------------------------------------//
+	// IOVisibleInterface
+	//----------------------------------------------------------------------//
+	virtual bool IsVisibleActor() const override;
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Collision")
 	class USphereComponent* CollisionComponent;
@@ -28,4 +33,5 @@ private:
 	void TakePickup();
 	void Respawn();
 	virtual bool GivePickupTo(class AOBaseCharacter* Character);
+	bool bTakenPickup = false;
 };

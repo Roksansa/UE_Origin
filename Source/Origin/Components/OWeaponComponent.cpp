@@ -271,7 +271,7 @@ void UOWeaponComponent::InitAmmo()
 		const bool AmmoCheckCond = AmmoDescriptions.Contains(EnumType);
 		checkf(AmmoCheckCond, TEXT("AmmoDesc for %s doesn't exist"), *EnumTypeName);
 		CurrentAmmo.Add(FOAmmoDescription{0, AmmoDescriptions[EnumType].Infinity});
-		CurrentAmmo[i-AmmoStart].BulletsCount = FMath::Min(10, AmmoDescriptions[EnumType].BulletsCount);
+		CurrentAmmo[i-AmmoStart].BulletsCount = FMath::Min(10, AmmoDescriptions[EnumType].BulletsCount-2);
 	}
 }
 
@@ -433,6 +433,21 @@ bool UOWeaponComponent::CanAmmoAnyWeapon() const
 		}
 	}
 	return false;
+}
+
+const FOAmmoDescription UOWeaponComponent::GetAmmoDescriptionByType(const EOAmmoType& Type, bool bIsWeaponDefault/*=false*/) const
+{
+	if (bIsWeaponDefault)
+	{
+		if (AmmoDescriptions.Contains(Type))
+		{
+			return AmmoDescriptions[Type];
+		}
+		return FOAmmoDescription{-1, true};
+	}
+
+	const int AmmoIndex = GetAmmoIndex(Type);
+	return CurrentAmmo[AmmoIndex];
 }
 
 void UOWeaponComponent::EndFire() const

@@ -99,6 +99,11 @@ public:
 	void OnUpdateAmmo();
 	const AOBaseWeapon* GetWeapon() const;
 	bool CanAmmoAnyWeapon() const;
+	/**
+	 * bIsWeaponDefault - if true -> return Default Ammo Param from this character
+	 * if false -> return Current Bullets by Type
+	 */
+	const FOAmmoDescription GetAmmoDescriptionByType(const EOAmmoType& Type, bool bIsWeaponDefault = false) const;
 protected:
 
 	FOnNotifyFinishEquip OnNotifyFinishEquip;
