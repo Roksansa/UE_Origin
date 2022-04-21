@@ -84,3 +84,21 @@ struct ORIGIN_API FOImpactData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "VFX")
 	FODecalData DecalData;
 };
+
+USTRUCT(BlueprintType)
+struct ORIGIN_API FOGameData
+{
+	GENERATED_BODY()
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "1", ClampMax = "20"))
+	int32 TeamNum = 2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "1", ClampMax = "20"))
+	int32 PlayersNum = 2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "1", ClampMax = "5"))
+	int32 RoundsNum = 2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "1", ClampMax = "100"))
+	int32 RoundTimeInSec = 2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "1", ClampMax = "100"))
+	int32 PlayerRespawnTimeInSec = 2;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "2", ClampMax = "2"))
+	TArray<FLinearColor> TeamColors;
+};

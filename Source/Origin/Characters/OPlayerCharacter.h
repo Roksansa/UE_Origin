@@ -18,6 +18,7 @@ public:
 	AOPlayerCharacter();
 	
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	virtual void LookUp(float Value) override;
 	virtual void Turn(float Value) override;

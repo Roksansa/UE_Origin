@@ -3,6 +3,7 @@
 #include "OPlayerController.h"
 
 #include "OTypes.h"
+#include "Components/OPlayerRespawnComponent.h"
 #include "Components/OWidgetManagerComponent.h"
 #include "GameFramework/PlayerInput.h"
 #include "Origin/Characters/OBaseCharacter.h"
@@ -11,21 +12,29 @@
 AOPlayerController::AOPlayerController(const FObjectInitializer& ObjectInitializer)
 {
 	WidgetManager = CreateDefaultSubobject<UOWidgetManagerComponent>("WidgetManager");
+	RespawnComponent = CreateDefaultSubobject<UOPlayerRespawnComponent>("RespawnComponent");
 }
 
 void AOPlayerController::SetPawn(APawn* InPawn)
 {
 	Super::SetPawn(InPawn);
+	if (InPawn && CachedBaseCharacter.Get() == InPawn)
+	{
+		return;
+	}
 	CachedBaseCharacter = Cast<AOBaseCharacter>(InPawn);
 	if (CachedBaseCharacter.IsValid() && CachedBaseCharacter->IsA<AOPlayerCharacter>())
 	{
-		const AOPlayerCharacter* PlayerCharacter = Cast<AOPlayerCharacter>(CachedBaseCharacter.Get());
+		AOPlayerCharacter* PlayerCharacter = Cast<AOPlayerCharacter>(CachedBaseCharacter.Get());
+		EnableInput(this);
 		if (PlayerCameraManager)
 		{
 			PlayerCameraManager->ViewPitchMin = PlayerCharacter->GetViewPitchMin();
 			PlayerCameraManager->ViewPitchMax = PlayerCharacter->GetViewPitchMax();
 		}
-		WidgetManager->InitWidgets();
+		WidgetManager->InitWidgets(this);
+		WidgetManager->UnbindWidgets();
+		WidgetManager->BindWidgets(PlayerCharacter);
 	}
 }
 

@@ -6,6 +6,7 @@
 #include "Characters/OBaseCharacter.h"
 #include "Characters/Controllers/OAIController.h"
 #include "Perception/AISense_Sight.h"
+#include "Utils/OBaseUtils.h"
 
 AActor* UOAIPerceptionComponent::GetNearestActor() const
 {
@@ -28,6 +29,11 @@ AActor* UOAIPerceptionComponent::GetNearestActor() const
 	{
 		AOBaseCharacter* CurChar = Cast<AOBaseCharacter>(ResultActor);
 		if (!CurChar || CurChar->IsDie())
+		{
+			continue;
+		}
+		bool IsEnemy = OBaseUtils::AreTheyEnemies(Controller, CurChar->GetController());
+		if (!IsEnemy)
 		{
 			continue;
 		}

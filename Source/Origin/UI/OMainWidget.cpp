@@ -18,6 +18,14 @@ FName UOMainWidget::GetAttrEventName(EOPrimaryAttr Type)
 	return Type == EOPrimaryAttr::Health ? OnHealthChangedName : OnStaminaChangedName;
 }
 
+void UOMainWidget::Init()
+{
+	if (!IsShowPlayerSpec)
+	{
+		PlayAnimationReverse(HidePlayerShowSpec);
+	}
+}
+
 void UOMainWidget::OnChangeAiming(bool bIsAiming)
 {
 	if (CurrentCrossHairWidget)
@@ -65,13 +73,24 @@ void UOMainWidget::NativeConstruct()
 
 void UOMainWidget::AnimDied()
 {
-	this->PlayAnimationForward(HidePlayerShowSpec);
+	IsShowPlayerSpec = false;
+	PlayAnimationForward(HidePlayerShowSpec);
 }
 
 void UOMainWidget::OnHealthChanged(float CurrentValue, float Diff, float MaxValue)
 {
 	if (Diff < 0)
 	{
-		this->PlayAnimationForward(ShowBlood);
+		PlayAnimationForward(ShowBlood);
 	}
+}
+
+UOPlayerStatsWidget* UOMainWidget::GetPlayerStatsWidget()
+{
+	return WBP_Stats;
+}
+
+UOSpectatorWidget* UOMainWidget::GetSpectatorWidget()
+{
+	return WBP_Spectator;
 }

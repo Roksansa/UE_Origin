@@ -3,6 +3,10 @@
 
 #include "OPrimaryAttributesComponent.h"
 
+#include "OriginGameModeBase.h"
+#include "Characters/OBaseCharacter.h"
+#include "Utils/OBaseUtils.h"
+
 UOPrimaryAttributesComponent::UOPrimaryAttributesComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
@@ -17,6 +21,7 @@ void UOPrimaryAttributesComponent::BeginPlay()
 	CurrentHealth = MaxHealth;
 	GetOwner()->OnTakeAnyDamage.AddDynamic(this, &UOPrimaryAttributesComponent::OnTakeAnyDamage);
 
+	Character = Cast<AOBaseCharacter>(GetOwner());
 	CurrentStamina = MaxStamina;
 	if (MinStaminaForStartSprint > MaxStamina)
 	{
@@ -24,9 +29,34 @@ void UOPrimaryAttributesComponent::BeginPlay()
 	}
 }
 
+bool UOPrimaryAttributesComponent::IsFriendlyDamage(AController* InstigatedBy) const
+{
+	if (!Character.Get())
+	{
+		return false;
+	}
+	bool bOnFireFriendly = true;
+	bool bIsEnemy = true;
+	AOriginGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AOriginGameModeBase>();
+	if (GameMode)
+	{
+		bOnFireFriendly = GameMode->IsOnFriendlyFire();
+		if (!bOnFireFriendly)
+		{
+			bIsEnemy = OBaseUtils::AreTheyEnemies(InstigatedBy, Character.Get()->GetController());
+		}
+	}
+	return !bOnFireFriendly && !bIsEnemy;
+}
+
 void UOPrimaryAttributesComponent::OnTakeAnyDamage(AActor* DamagedActor, float Damage, const UDamageType* DamageType,
 	AController* InstigatedBy, AActor* DamageCauser)
 {
+	if (IsFriendlyDamage(InstigatedBy))
+	{
+		return;
+	}
+	
 	if (Damage > 0.f && CurrentHealth > SMALL_NUMBER)
 	{
 		const float PrevHealth = CurrentHealth;
@@ -42,6 +72,12 @@ void UOPrimaryAttributesComponent::OnTakeAnyDamage(AActor* DamagedActor, float D
 			{
 				GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Blue, FString::Printf(TEXT("Die:")), true,
 					FVector2D(2, 2));
+
+				if (AOriginGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AOriginGameModeBase>())
+				{
+					GameMode->UpdateKillDeathInfo(Character.Get() ? Character->GetController() : nullptr, InstigatedBy);
+				}
+				
 				OnDie.Broadcast();
 			}
 		}

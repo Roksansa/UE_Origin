@@ -3,7 +3,11 @@
 
 #include "OWidgetManagerComponent.h"
 
+#include "OPlayerRespawnComponent.h"
+#include "OriginGameModeBase.h"
+#include "OriginPlayerState.h"
 #include "Characters/OBaseCharacter.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "UI/OMainWidget.h"
 #include "UI/OPrimaryAttrWidget.h"
 
@@ -36,13 +40,15 @@ void UOWidgetManagerComponent::BindWidgets(AOBaseCharacter* Character)
 	Character->OnChangeAiming.AddDynamic(MainWidget.Get(), &UOMainWidget::OnChangeAiming);
 	Character->GetOnNotifyChangeWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyChangeWeapon);
 	Character->GetOnNotifyUpdatedAmmoWeapon().AddUObject(MainWidget.Get(), &UOMainWidget::OnNotifyUpdatedAmmoWeapon);
-	
+	Character->GetWeaponComponent()->OnUpdateAmmo();
+
+	MainWidget->Init();
 	bIsWidgetsBinded = true;
 }
 
-void UOWidgetManagerComponent::InitWidgets()
+void UOWidgetManagerComponent::InitWidgets(AController* NewController)
 {
-	if ((MainWidgetTemplate != nullptr && MainWidget == nullptr))
+	if ((MainWidgetTemplate != nullptr && MainWidget == nullptr) && NewController != nullptr)
 	{
 		MainWidget = CreateWidget<UOMainWidget>(GetWorld(), MainWidgetTemplate.Get());
 		if (!MainWidget.IsValid())
@@ -50,5 +56,69 @@ void UOWidgetManagerComponent::InitWidgets()
 			return;
 		}
 		MainWidget->AddToViewport();
+		Controller = NewController;
+		UOPlayerStatsWidget* PlayerStatsWidget = MainWidget->GetPlayerStatsWidget();
+		if (AOriginGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AOriginGameModeBase>())
+		{
+			GameMode->OnUpdateStateNum.AddUObject(this, &UOWidgetManagerComponent::UpdateDesc);
+			GameMode->OnUpdateRoundNum.AddUObject(PlayerStatsWidget, &UOPlayerStatsWidget::UpdateRounds);
+			GameMode->OnUpdateTimerLeft.AddUObject(PlayerStatsWidget, &UOPlayerStatsWidget::UpdateTimer);
+			GameMode->OnEndPlayAllRounds.AddUObject(this, &UOWidgetManagerComponent::ShowAllStats);
+			PlayerStatsWidget->UpdateTimer(GameMode->GetLeftTime());
+		}
+		PlayerState = Controller->GetPlayerState<AOriginPlayerState>();
+		if (PlayerState.IsValid())
+		{
+			PlayerStatsWidget->UpdatePlayerStats(PlayerState->GetKills(), PlayerState->GetDeaths());
+		}
+
+		UOPlayerRespawnComponent* RespawnComponent = Cast<UOPlayerRespawnComponent>(Controller->GetComponentByClass(UOPlayerRespawnComponent::StaticClass()));
+		if (RespawnComponent)
+		{
+			RespawnComponent->OnUpdateRespawnTime.AddUObject(MainWidget->GetSpectatorWidget(), &UOSpectatorWidget::UpdateTimeRespawn);
+		}
 	}
+}
+
+void UOWidgetManagerComponent::UnbindWidgets()
+{
+	bIsWidgetsBinded = false;
+}
+
+void UOWidgetManagerComponent::UpdateDesc(const AController* DeadController, const AController* KillerController, int32 Death, int32 Kills)
+{
+	if (!Controller.Get() || (DeadController != Controller && KillerController != Controller))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, FString::Format(TEXT("UpdateDesc Name1: {0} Deaths : {1} ----- Name2: {2} Kills: {3} "), {DeadController ? DeadController->GetName() : "Null", Death, KillerController ? KillerController->GetName() : "Null2", Kills}));
+		return;
+	}
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Blue, FString::Format(TEXT("UpdateDesc Name1: {0} Deaths : {1} ----- Name2: {2} Kills: {3} "), {DeadController ? DeadController->GetName() : "Null", Death, KillerController ? KillerController->GetName() : "Null2", Kills}));
+	if (PlayerState.Get())
+	{
+		UOPlayerStatsWidget* PlayerStatsWidget = MainWidget->GetPlayerStatsWidget();
+		PlayerStatsWidget->UpdatePlayerStats(PlayerState->GetKills(), PlayerState->GetDeaths());
+	}
+}
+
+void UOWidgetManagerComponent::ShowAllStats()
+{
+	if (Controller.Get())
+	{
+		Controller->ChangeState(NAME_Default);
+	}
+	FConstControllerIterator Controllers = GetWorld()->GetControllerIterator();
+	for (FConstControllerIterator& It = Controllers; It; ++It)
+	{
+		AController* CurController = It->Get();
+		if (CurController)
+		{
+			AOriginPlayerState* HisPlayerState = CurController->GetPlayerState<AOriginPlayerState>();
+			if (HisPlayerState)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 112, FColor::Red, FString::Format(TEXT("Name: {0} ___ ID: {3}, Kills : {1}, Deaths: {2}"),
+					{CurController->GetName(), HisPlayerState->GetKills(), HisPlayerState->GetDeaths()}));
+			}
+		}
+	}
+	
 }

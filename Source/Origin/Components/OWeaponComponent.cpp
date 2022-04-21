@@ -407,8 +407,9 @@ void UOWeaponComponent::AmmoDesc()
 		CurrentBullets, AmmoDescriptions[AmmoType].BulletsCount, AmmoDescriptions[AmmoType].Infinity);
 }
 
-void UOWeaponComponent::OnUpdateAmmo()
+void UOWeaponComponent::OnUpdateAmmo() const
 {
+	OnNotifyChangeWeapon.Broadcast(GetWeaponType());
 	if (CurrentWeapon)
 	{
 		const EOAmmoType AmmoType = CurrentWeapon->GetAmmoData().AmmoType;

@@ -10,6 +10,8 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnChangeHealth, float, float, float);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnChangeStamina, float, float, float);
 DECLARE_MULTICAST_DELEGATE(FOnDie);
 
+class AOBaseCharacter;
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class ORIGIN_API UOPrimaryAttributesComponent : public UActorComponent
 {
@@ -37,7 +39,8 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
+	bool IsFriendlyDamage(AController* InstigatedBy) const;
+
 	UFUNCTION()
 	void OnTakeAnyDamage(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 	
@@ -59,4 +62,5 @@ protected:
 private:
 	float CurrentHealth = 0.f;
 	float CurrentStamina = 0.f;
+	TWeakObjectPtr<AOBaseCharacter> Character;
 };

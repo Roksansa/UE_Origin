@@ -35,13 +35,18 @@ AOPlayerCharacter::AOPlayerCharacter()
 void AOPlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	CurrentFOV = CameraComponent->FieldOfView;
 	AOPlayerController* CurrentPlayerController = Cast<AOPlayerController>(GetController());
 	if (CurrentPlayerController != nullptr)
 	{
 		CurrentPlayerController->BindWidgets();
-		WeaponComponent->OnUpdateAmmo();
 	}
-	CurrentFOV = CameraComponent->FieldOfView;
+}
+
+void AOPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
+	Super::EndPlay(EndPlayReason);
 }
 
 void AOPlayerCharacter::LookUp(float Value)

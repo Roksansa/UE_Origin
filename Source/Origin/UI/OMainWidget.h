@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "OAmmoDescWidget.h"
+#include "OPlayerStatsWidget.h"
+#include "OSpectatorWidget.h"
 #include "OTypes.h"
 #include "Actors/Weapon/OBaseWeapon.h"
 #include "Blueprint/UserWidget.h"
@@ -20,6 +22,8 @@ public:
 	class UOPrimaryAttrWidget* GetAttrWidget(EOPrimaryAttr Type);
 	FName GetAttrEventName(EOPrimaryAttr Type);
 
+	void Init();
+	
 	UFUNCTION()
 	void OnChangeAiming(bool bIsAiming);
 	void OnNotifyChangeWeapon(EOEquippableItemType EquippableItem);
@@ -31,6 +35,9 @@ public:
 	void AnimDied();
 	UFUNCTION()
 	void OnHealthChanged(float CurrentValue, float Diff, float MaxValue);
+
+	UOPlayerStatsWidget* GetPlayerStatsWidget();
+	UOSpectatorWidget* GetSpectatorWidget();
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName HealthWidgetName;
@@ -53,10 +60,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
 	UWidgetAnimation* ShowBlood;
 
+	UPROPERTY(BlueprintReadOnly, Category = "Config", meta=(BindWidget))
+	UOPlayerStatsWidget* WBP_Stats;
+	UPROPERTY(BlueprintReadOnly, Category = "Config", meta=(BindWidget))
+	UOSpectatorWidget* WBP_Spectator;
 private:
 	UPROPERTY()
 	UOCrossHairWidget* CurrentCrossHairWidget;
 
 	UPROPERTY()
 	UOAmmoDescWidget* AmmoDescWidget;
+
+	bool IsShowPlayerSpec = true;
 };

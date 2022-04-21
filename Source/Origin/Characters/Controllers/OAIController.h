@@ -23,6 +23,8 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="AI")
 	UOAIPerceptionComponent* AIPerceptionComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="GameLogic")
+	class UOPlayerRespawnComponent* RespawnComponent;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="AI")
 	float RateUpdateActor = 0.2f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="AI")

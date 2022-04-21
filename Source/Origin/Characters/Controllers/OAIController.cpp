@@ -6,11 +6,14 @@
 #include "AI/Components/OAIPerceptionComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Characters/OAICharacter.h"
+#include "Components/OPlayerRespawnComponent.h"
 
 AOAIController::AOAIController()
 {
 	AIPerceptionComponent = CreateDefaultSubobject<UOAIPerceptionComponent>("AIPerceptionComponent");
 	SetPerceptionComponent(*AIPerceptionComponent);
+	RespawnComponent = CreateDefaultSubobject<UOPlayerRespawnComponent>("RespawnComponent");
+	bWantsPlayerState = true;
 }
 
 const UOAIPerceptionComponent* AOAIController::GetAIPerceptionComponent() const

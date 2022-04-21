@@ -96,7 +96,7 @@ public:
 	FOnNotifyChangeWeapon OnNotifyChangeWeapon;
 	FOnNotifyUpdatedAmmoWeapon OnNotifyUpdatedAmmoWeapon;
 
-	void OnUpdateAmmo();
+	void OnUpdateAmmo() const;
 	const AOBaseWeapon* GetWeapon() const;
 	bool CanAmmoAnyWeapon() const;
 	/**

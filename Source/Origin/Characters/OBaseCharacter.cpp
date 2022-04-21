@@ -42,6 +42,12 @@ void AOBaseCharacter::BeginPlay()
 	PrimaryAttributesComponent->OnChangeHealth.AddUObject(this, &AOBaseCharacter::OnChangeHealth);
 }
 
+void AOBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AOBaseCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
@@ -474,18 +480,17 @@ bool AOBaseCharacter::IsDie() const
 	return PrimaryAttributesComponent->IsDead();
 }
 
-
 void AOBaseCharacter::OnDie()
 {
 	StopAnimMontage();
 	PlayAnimMontage(DeathAnimMontage);
 	GetCharacterMovement()->DisableMovement();
-	GetController()->DisableInput(nullptr);
 	SetLifeSpan(5.f);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponComponent->StopFire();
 	if (Controller)
 	{
+		Controller->DisableInput(nullptr);
 		Controller->ChangeState(NAME_Spectating);
 	}
 }
@@ -498,3 +503,14 @@ void AOBaseCharacter::OnChangeHealth(float Health, float Diff, float MaxValue)
 		PlayAnimMontage(Desc.HitAnimMontage);
 	}
 }
+
+void AOBaseCharacter::SetCharacterColor(const FLinearColor& LinearColor)
+{
+	const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
+	if (!MaterialInst)
+	{
+		return;
+	}
+	MaterialInst->SetVectorParameterValue(MaterialColorName, LinearColor);
+}
+

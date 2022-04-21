@@ -25,12 +25,17 @@ public:
 	bool FirstPressedKeyForAction(const FName ActionName, FText& OutKeyName) const;
 
 	void BindWidgets();
+	FPawnChangedSignature& GetOnSetPawnNotifier() { return OnSetPawn; }
 protected:
 	
 	virtual void BeginPlay() override;
 	virtual void SetupInputComponent() override;
 	UPROPERTY(VisibleAnywhere)
 	class UOWidgetManagerComponent* WidgetManager;
+	FPawnChangedSignature OnSetPawn;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category="GameLogic")
+	class UOPlayerRespawnComponent* RespawnComponent;
 private:
 	TWeakObjectPtr<class AOBaseCharacter> CachedBaseCharacter;
 	void ChangeSprint(bool bWantsToSprint);

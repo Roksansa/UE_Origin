@@ -30,6 +30,8 @@ public:
 	AOBaseCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 	virtual void LookUp(float Value) {}
 	virtual void Turn(float Value) {}
 	virtual void MoveRight(float Value) {}
@@ -111,6 +113,8 @@ public:
 	bool TryAddAmmo(const EOAmmoType& Type, int32 Count);
 	bool TryAddBoosters(const EOBoostingType& Type, int32 Value);
 	bool IsDie() const;
+	
+	void SetCharacterColor(const FLinearColor& LinearColor);
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
@@ -161,6 +165,9 @@ protected:
 
 	UFUNCTION()
 	virtual void OnChangeHealth(float Health, float Diff, float MaxValue);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Materials")
+	FName MaterialColorName = "BodyColor";
 private:
 	void FillMantlingMovementParameters(struct FOLedgeDescription LedgeDescription, FOMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;
