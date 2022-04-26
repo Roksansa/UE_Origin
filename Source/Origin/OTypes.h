@@ -102,3 +102,13 @@ struct ORIGIN_API FOGameData
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game", meta = (ClampMin = "2", ClampMax = "2"))
 	TArray<FLinearColor> TeamColors;
 };
+
+UENUM(BlueprintType)
+enum class EOMatchState : uint8
+{
+	WaitingToStart = 0,
+	InProgress = 1,
+	Pause = 2,
+	GameOver = 3,
+	MAX UMETA(Hidden)
+};

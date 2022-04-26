@@ -14,6 +14,7 @@ void AOriginGameModeBase::StartPlay()
 	SpawnAI();
 	CreateTeamInfos();
 	CurrentRound = 0;
+	SetMatchState(EOMatchState::InProgress);
 	StartRound();
 }
 
@@ -24,6 +25,26 @@ UClass* AOriginGameModeBase::GetDefaultPawnClassForController_Implementation(ACo
 		return AIPawnTemplate;
 	}
 	return Super::GetDefaultPawnClassForController_Implementation(InController);
+}
+
+bool AOriginGameModeBase::SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate)
+{
+	const bool bPause = Super::SetPause(PC, CanUnpauseDelegate);
+	if (bPause)
+	{
+		SetMatchState(EOMatchState::Pause);
+	}
+	return bPause;
+}
+
+bool AOriginGameModeBase::ClearPause()
+{
+	const bool bClear = Super::ClearPause();
+	if (bClear)
+	{
+		SetMatchState(EOMatchState::InProgress);
+	}
+	return bClear;
 }
 
 bool AOriginGameModeBase::IsOnFriendlyFire() const
@@ -112,7 +133,6 @@ void AOriginGameModeBase::UpdateTime()
 		}
 		else
 		{
-			OnEndPlayAllRounds.Broadcast();
 			FConstControllerIterator Controllers = GetWorld()->GetControllerIterator();
 			for (FConstControllerIterator& It = Controllers; It; ++It)
 			{
@@ -123,6 +143,7 @@ void AOriginGameModeBase::UpdateTime()
 				}
 			}
 			GEngine->AddOnScreenDebugMessage(112, 112, FColor::Blue, FString::Format(TEXT("End Game "), {1}));
+			SetMatchState(EOMatchState::GameOver);
 		}
 	}
 }
@@ -209,4 +230,14 @@ void AOriginGameModeBase::SetPlayerColor(AController* Controller)
 		return;
 	}
 	Character->SetCharacterColor(PlayerState->GetTeamColor());
+}
+
+void AOriginGameModeBase::SetMatchState(EOMatchState NewMatchState)
+{
+	if (NewMatchState == MatchState)
+	{
+		return;
+	}
+	MatchState = NewMatchState;
+	OnUpdateMatchState.Broadcast(MatchState);
 }

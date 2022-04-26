@@ -26,6 +26,9 @@ public:
 
 	void BindWidgets();
 	FPawnChangedSignature& GetOnSetPawnNotifier() { return OnSetPawn; }
+
+	UFUNCTION()
+	void PauseGame();
 protected:
 	
 	virtual void BeginPlay() override;
@@ -67,9 +70,3 @@ private:
 	// gimbal lock for swim up and swim forward for y = 90. if rotate vector up to forward vector
 	float LastSwimUpValue = 0.f;
 };
-
-inline void AOPlayerController::BeginPlay()
-{
-	Super::BeginPlay();
-	check(WidgetManager);
-}

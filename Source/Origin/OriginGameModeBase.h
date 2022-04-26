@@ -8,9 +8,9 @@
 #include "OriginGameModeBase.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_FourParams(FOnUpdateStateNum, const AController*, const AController*, int32, int32);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateTimerLeft, int32);
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnUpdateRoundNum, int32, int32);
-DECLARE_MULTICAST_DELEGATE(FOnEndPlayAllRounds);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateTimerLeft, int32);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnUpdateMatchState, EOMatchState);
 class AAIController;
 
 UCLASS()
@@ -21,6 +21,9 @@ class ORIGIN_API AOriginGameModeBase : public AGameModeBase
 public:
 	virtual void StartPlay() override;
 	virtual UClass* GetDefaultPawnClassForController_Implementation(AController* InController) override;
+	virtual bool SetPause(APlayerController* PC, FCanUnpause CanUnpauseDelegate) override;
+	virtual bool ClearPause() override;
+	
 	bool IsOnFriendlyFire() const;
 	void UpdateKillDeathInfo(AController* DeadController, AController* KillerController);
 	int32 GetLeftTime() const;
@@ -33,7 +36,7 @@ public:
 	FOnUpdateStateNum OnUpdateStateNum;
 	FOnUpdateTimerLeft OnUpdateTimerLeft;
 	FOnUpdateRoundNum OnUpdateRoundNum;
-	FOnEndPlayAllRounds OnEndPlayAllRounds;
+	FOnUpdateMatchState OnUpdateMatchState;
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game")
 	TSubclassOf<AAIController> AIControllerTemplate;
@@ -55,8 +58,10 @@ private:
 	void CreateTeamInfos();
 	FLinearColor GetColorByTeamId(int32 TeamId) const;
 	void SetPlayerColor(AController* Controller);
+	void SetMatchState(EOMatchState NewMatchState);
 
 	int32 CurrentRound = 1;
 	int32 LeftTimeInSec = 0;
 	FTimerHandle RoundTimerHandle;
+	EOMatchState MatchState = EOMatchState::WaitingToStart;
 };

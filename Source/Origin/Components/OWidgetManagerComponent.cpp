@@ -7,6 +7,7 @@
 #include "OriginGameModeBase.h"
 #include "OriginPlayerState.h"
 #include "Characters/OBaseCharacter.h"
+#include "Characters/Controllers/OPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "UI/OMainWidget.h"
 #include "UI/OPrimaryAttrWidget.h"
@@ -56,14 +57,15 @@ void UOWidgetManagerComponent::InitWidgets(AController* NewController)
 			return;
 		}
 		MainWidget->AddToViewport();
-		Controller = NewController;
+		Controller = Cast<AOPlayerController>(NewController);
+		MainWidget->InputPause.BindUFunction(Controller.Get(), "PauseGame");
 		UOPlayerStatsWidget* PlayerStatsWidget = MainWidget->GetPlayerStatsWidget();
 		if (AOriginGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AOriginGameModeBase>())
 		{
 			GameMode->OnUpdateStateNum.AddUObject(this, &UOWidgetManagerComponent::UpdateDesc);
 			GameMode->OnUpdateRoundNum.AddUObject(PlayerStatsWidget, &UOPlayerStatsWidget::UpdateRounds);
 			GameMode->OnUpdateTimerLeft.AddUObject(PlayerStatsWidget, &UOPlayerStatsWidget::UpdateTimer);
-			GameMode->OnEndPlayAllRounds.AddUObject(this, &UOWidgetManagerComponent::ShowAllStats);
+			GameMode->OnUpdateMatchState.AddUObject(this, &UOWidgetManagerComponent::UpdateMatchState);
 			PlayerStatsWidget->UpdateTimer(GameMode->GetLeftTime());
 		}
 		PlayerState = Controller->GetPlayerState<AOriginPlayerState>();
@@ -120,5 +122,43 @@ void UOWidgetManagerComponent::ShowAllStats()
 			}
 		}
 	}
-	
+	if (MainWidget.IsValid())
+	{
+		MainWidget->OnHideAll(true);
+	}
+}
+
+void UOWidgetManagerComponent::UpdateMatchState(EOMatchState MatchState)
+{
+	if (Controller.IsValid())
+	{
+		Controller->bShowMouseCursor = MatchState != EOMatchState::InProgress;
+		MatchState != EOMatchState::InProgress ? Controller->SetInputMode(FInputModeGameAndUI()) : Controller->SetInputMode(FInputModeGameOnly());
+	}
+	switch (MatchState)
+	{
+		case EOMatchState::WaitingToStart: break;
+		case EOMatchState::InProgress:
+		{
+			if (MainWidget.IsValid())
+			{
+				MainWidget->Init();
+			}
+			break;
+		}
+		case EOMatchState::Pause:
+		{
+			if (MainWidget.IsValid())
+			{
+				MainWidget->OnPauseGame(true);
+			}
+			break;
+		}
+		case EOMatchState::GameOver:
+		{
+			ShowAllStats();
+			break;
+		}
+		default: ;
+	}
 }

@@ -21,13 +21,15 @@ class ORIGIN_API UOMainWidget : public UUserWidget
 public:
 	class UOPrimaryAttrWidget* GetAttrWidget(EOPrimaryAttr Type);
 	FName GetAttrEventName(EOPrimaryAttr Type);
-
 	void Init();
 	
 	UFUNCTION()
 	void OnChangeAiming(bool bIsAiming);
 	void OnNotifyChangeWeapon(EOEquippableItemType EquippableItem);
 	void OnNotifyUpdatedAmmoWeapon(EOAmmoType Type, int CurrentCount, int MaxCount, bool Infinity);
+
+	void OnHideAll(bool bHide);
+	void OnPauseGame(bool bPause);
 
 	virtual void NativeConstruct() override;
 	
@@ -38,6 +40,8 @@ public:
 
 	UOPlayerStatsWidget* GetPlayerStatsWidget();
 	UOSpectatorWidget* GetSpectatorWidget();
+
+	FOnInputAction InputPause;
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category="WidgetName")
 	FName HealthWidgetName;
@@ -55,10 +59,22 @@ protected:
 	TMap<EOEquippableItemType, UOCrossHairWidget*> CrossHairWidgets;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
-	UWidgetAnimation* HidePlayerShowSpec;
-
+	UWidgetAnimation* ShowPlayerSpec;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
 	UWidgetAnimation* ShowBlood;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* HideAll;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* ShowPauseGame;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* ShowSpectatorPanel;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* ShowStats;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Config", meta=(BindWidget))
 	UOPlayerStatsWidget* WBP_Stats;
@@ -71,5 +87,9 @@ private:
 	UPROPERTY()
 	UOAmmoDescWidget* AmmoDescWidget;
 
+	bool IsShowSpectatorPanel = false;
 	bool IsShowPlayerSpec = true;
+	bool IsShowStats = true;
+	bool IsPause = false;
+	bool IsHideAll = false;
 };

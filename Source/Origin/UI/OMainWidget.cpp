@@ -22,7 +22,22 @@ void UOMainWidget::Init()
 {
 	if (!IsShowPlayerSpec)
 	{
-		PlayAnimationReverse(HidePlayerShowSpec);
+		PlayAnimationForward(ShowPlayerSpec);
+		IsShowPlayerSpec = true;
+	}
+	if (IsShowSpectatorPanel)
+	{
+		PlayAnimationReverse(ShowSpectatorPanel);
+		IsShowSpectatorPanel = false;
+	}
+	if (!IsShowStats)
+	{
+		PlayAnimationForward(ShowStats);
+		IsShowStats = true;
+	}
+	if (IsPause)
+	{
+		OnPauseGame(false);
 	}
 }
 
@@ -61,6 +76,54 @@ void UOMainWidget::OnNotifyUpdatedAmmoWeapon(EOAmmoType Type, int CurrentCount, 
 	}
 }
 
+void UOMainWidget::OnHideAll(bool bHide)
+{
+	if (bHide != IsHideAll)
+	{
+		IsHideAll = bHide;
+		if (bHide)
+		{
+			PlayAnimationForward(HideAll);
+			UE_LOG(LogEngine, Warning, TEXT(" HideAll True"));
+		}
+		else
+		{
+			if (IsShowPlayerSpec)
+			{
+				PlayAnimationForward(ShowPlayerSpec);
+			}
+			if (IsShowSpectatorPanel)
+			{
+				PlayAnimationForward(ShowSpectatorPanel);
+			}
+			if (IsShowStats)
+			{
+				PlayAnimationForward(ShowStats);
+			}
+			UE_LOG(LogEngine, Warning, TEXT(" HideAll FALSE"));
+		}
+	}
+}
+
+void UOMainWidget::OnPauseGame(bool bPause)
+{
+	if (bPause != IsPause)
+	{
+		IsPause = bPause;
+		OnHideAll(bPause);
+		if (bPause)
+		{
+			PlayAnimationForward(ShowPauseGame);
+			UE_LOG(LogEngine, Warning, TEXT("True"));
+		}
+		else
+		{
+			PlayAnimationReverse(ShowPauseGame);
+			UE_LOG(LogEngine, Warning, TEXT("false"));
+		}
+	}
+}
+
 void UOMainWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -74,7 +137,9 @@ void UOMainWidget::NativeConstruct()
 void UOMainWidget::AnimDied()
 {
 	IsShowPlayerSpec = false;
-	PlayAnimationForward(HidePlayerShowSpec);
+	PlayAnimationReverse(ShowPlayerSpec);
+	IsShowSpectatorPanel = true;
+	PlayAnimationForward(ShowSpectatorPanel);
 }
 
 void UOMainWidget::OnHealthChanged(float CurrentValue, float Diff, float MaxValue)

@@ -5,6 +5,7 @@
 #include "OTypes.h"
 #include "Components/OPlayerRespawnComponent.h"
 #include "Components/OWidgetManagerComponent.h"
+#include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerInput.h"
 #include "Origin/Characters/OBaseCharacter.h"
 #include "Origin/Characters/OPlayerCharacter.h"
@@ -13,6 +14,12 @@ AOPlayerController::AOPlayerController(const FObjectInitializer& ObjectInitializ
 {
 	WidgetManager = CreateDefaultSubobject<UOWidgetManagerComponent>("WidgetManager");
 	RespawnComponent = CreateDefaultSubobject<UOPlayerRespawnComponent>("RespawnComponent");
+}
+
+void AOPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	check(WidgetManager);
 }
 
 void AOPlayerController::SetPawn(APawn* InPawn)
@@ -71,6 +78,10 @@ void AOPlayerController::BindWidgets()
 void AOPlayerController::SetupInputComponent()
 {
 	Super::SetupInputComponent();
+	if (!InputComponent)
+	{
+		return;
+	}
 	InputComponent->BindAxis("MoveForward", this, &AOPlayerController::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &AOPlayerController::MoveRight);
 	InputComponent->BindAxis("Turn", this, &AOPlayerController::Turn);
@@ -95,6 +106,8 @@ void AOPlayerController::SetupInputComponent()
 	InputComponent->BindAction("ReloadAmmo", EInputEvent::IE_Pressed, this, &AOPlayerController::ReloadAmmo);
 	InputComponent->BindAction("Aim", EInputEvent::IE_Pressed, this, &AOPlayerController::StartAiming);
 	InputComponent->BindAction("Aim", EInputEvent::IE_Released, this, &AOPlayerController::StopAiming);
+	auto& Input = InputComponent->BindAction("Pause", EInputEvent::IE_Pressed, this, &AOPlayerController::PauseGame);
+	Input.bExecuteWhenPaused = true;
 }
 
 void AOPlayerController::ChangeSprint(bool bWantsToSprint)
@@ -288,5 +301,21 @@ void AOPlayerController::StopAiming()
 	if (CachedBaseCharacter.IsValid())
 	{
 		CachedBaseCharacter->StopAiming();
+	}
+}
+
+void AOPlayerController::PauseGame()
+{
+	if (!GetWorld() || !GetWorld()->GetAuthGameMode())
+	{
+		return;
+	}
+	if (!GetWorld()->GetAuthGameMode()->IsPaused())
+	{
+		GetWorld()->GetAuthGameMode()->SetPause(this);
+	}
+	else
+	{
+		GetWorld()->GetAuthGameMode()->ClearPause();
 	}
 }

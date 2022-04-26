@@ -8,7 +8,7 @@
 #include "OWidgetManagerComponent.generated.h"
 
 class UOMainWidget;
-class AController;
+class AOPlayerController;
 class AOriginPlayerState;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -31,9 +31,10 @@ private:
 	bool bIsWidgetsBinded = false;
 
 	TWeakObjectPtr<UOMainWidget> MainWidget;
-	TWeakObjectPtr<AController> Controller;
+	TWeakObjectPtr<AOPlayerController> Controller;
 	TWeakObjectPtr<AOriginPlayerState> PlayerState;
 
 	void UpdateDesc(const AController* DeadController, const AController* KillerController, int32 Death, int32 Kills);
 	void ShowAllStats();
+	void UpdateMatchState(EOMatchState MatchState);
 };
