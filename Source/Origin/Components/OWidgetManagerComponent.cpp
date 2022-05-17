@@ -104,10 +104,6 @@ void UOWidgetManagerComponent::UpdateDesc(const AController* DeadController, con
 
 void UOWidgetManagerComponent::ShowAllStats()
 {
-	if (Controller.Get())
-	{
-		Controller->ChangeState(NAME_Default);
-	}
 	FConstControllerIterator Controllers = GetWorld()->GetControllerIterator();
 	for (FConstControllerIterator& It = Controllers; It; ++It)
 	{
@@ -122,22 +118,17 @@ void UOWidgetManagerComponent::ShowAllStats()
 			}
 		}
 	}
-	if (MainWidget.IsValid())
-	{
-		MainWidget->OnHideAll(true);
-	}
 }
 
 void UOWidgetManagerComponent::UpdateMatchState(EOMatchState MatchState)
 {
-	if (Controller.IsValid())
-	{
-		Controller->bShowMouseCursor = MatchState != EOMatchState::InProgress;
-		MatchState != EOMatchState::InProgress ? Controller->SetInputMode(FInputModeGameAndUI()) : Controller->SetInputMode(FInputModeGameOnly());
-	}
 	switch (MatchState)
 	{
-		case EOMatchState::WaitingToStart: break;
+		case EOMatchState::WaitingToStart:
+		{
+			GEngine->ClearOnScreenDebugMessages();
+			break;
+		}
 		case EOMatchState::InProgress:
 		{
 			if (MainWidget.IsValid())
@@ -157,6 +148,11 @@ void UOWidgetManagerComponent::UpdateMatchState(EOMatchState MatchState)
 		case EOMatchState::GameOver:
 		{
 			ShowAllStats();
+			if (MainWidget.IsValid())
+			{
+				MainWidget->ChangeGameStatus(true);
+				MainWidget->OnHideAll(true);
+			}
 			break;
 		}
 		default: ;

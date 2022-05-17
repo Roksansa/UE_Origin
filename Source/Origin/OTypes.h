@@ -28,6 +28,9 @@ const FName NextWeaponIndexActionName = FName("NextWeaponIndex");
 const FName OnHealthChangedName = FName("OnHealthChanged");
 const FName AnimDiedName = FName("AnimDied");
 
+const FName MenuLevelName = FName("Menu_Default");
+const FName GymLevelName = FName("Gym_Default");
+
 UENUM(BlueprintType)
 enum class EOEquippableItemType : uint8
 {

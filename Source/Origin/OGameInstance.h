@@ -18,4 +18,12 @@ public:
 	virtual void Init() override;
 	virtual void Shutdown() override;
 	virtual void StartGameInstance() override;
+
+	UFUNCTION()
+	virtual void BeginLoadingScreen(const FString& MapName);
+	UFUNCTION()
+	virtual void EndLoadingScreen();
+
+private:
+	FDelegateHandle Handler;
 };

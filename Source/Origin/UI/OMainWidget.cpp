@@ -124,6 +124,14 @@ void UOMainWidget::OnPauseGame(bool bPause)
 	}
 }
 
+void UOMainWidget::ChangeGameStatus(bool bGameOver)
+{
+	if (bGameOver)
+	{
+		PlayAnimation(ShowGameOverAnim, 0, 0);
+	}
+}
+
 void UOMainWidget::NativeConstruct()
 {
 	Super::NativeConstruct();

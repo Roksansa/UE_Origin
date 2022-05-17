@@ -29,6 +29,9 @@ public:
 	int32 GetLeftTime() const;
 	void Respawn(AController* Controller);
 
+	void ResetLevelOnGameOver();
+	EOMatchState GetMatchState() const;
+
 	/**
 	 * first int32 - DeadContoller's deaths, 
 	 * second int32 - KillerContoller's kills
@@ -37,6 +40,7 @@ public:
 	FOnUpdateTimerLeft OnUpdateTimerLeft;
 	FOnUpdateRoundNum OnUpdateRoundNum;
 	FOnUpdateMatchState OnUpdateMatchState;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Game")
 	TSubclassOf<AAIController> AIControllerTemplate;

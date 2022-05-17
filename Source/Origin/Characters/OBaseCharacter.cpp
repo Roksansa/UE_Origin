@@ -485,7 +485,6 @@ void AOBaseCharacter::OnDie()
 	StopAnimMontage();
 	PlayAnimMontage(DeathAnimMontage);
 	GetCharacterMovement()->DisableMovement();
-	SetLifeSpan(5.f);
 	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
 	WeaponComponent->StopFire();
 	if (Controller)

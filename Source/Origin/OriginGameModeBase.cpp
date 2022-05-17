@@ -6,6 +6,7 @@
 #include "OriginPlayerState.h"
 #include "Characters/OBaseCharacter.h"
 #include "Components/OPlayerRespawnComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 void AOriginGameModeBase::StartPlay()
 {
@@ -64,13 +65,19 @@ void AOriginGameModeBase::UpdateKillDeathInfo(AController* DeadController, ACont
 			TeamIdDead = DeadState->GetTeamId();
 			Deaths = DeadState->GetDeaths();
 		}
+		float TimeLifeSpanAfterDeath = LeftTimeInSec;
 		UOPlayerRespawnComponent* RespawnComponent = Cast<UOPlayerRespawnComponent>(DeadController->GetComponentByClass(UOPlayerRespawnComponent::StaticClass()));
 		if (RespawnComponent)
 		{
 			if (LeftTimeInSec > GameData.PlayerRespawnTimeInSec)
 			{
 				RespawnComponent->Respawn(GameData.PlayerRespawnTimeInSec);
+				TimeLifeSpanAfterDeath = GameData.PlayerRespawnTimeInSec;
 			}
+		}
+		if (DeadController->GetPawn()->IsA<AOBaseCharacter>())
+		{
+			DeadController->GetPawn()->SetLifeSpan(TimeLifeSpanAfterDeath);
 		}
 	}
 
@@ -100,6 +107,15 @@ void AOriginGameModeBase::Respawn(AController* Controller)
 	ResetPlayer(Controller);
 }
 
+void AOriginGameModeBase::ResetLevelOnGameOver()
+{
+	UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(this)));
+}
+
+EOMatchState AOriginGameModeBase::GetMatchState() const
+{
+	return MatchState;
+}
 
 void AOriginGameModeBase::SpawnAI()
 {

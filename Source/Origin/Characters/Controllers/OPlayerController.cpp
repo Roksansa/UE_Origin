@@ -2,11 +2,13 @@
 
 #include "OPlayerController.h"
 
+#include "OriginGameModeBase.h"
 #include "OTypes.h"
 #include "Components/OPlayerRespawnComponent.h"
 #include "Components/OWidgetManagerComponent.h"
 #include "GameFramework/GameModeBase.h"
 #include "GameFramework/PlayerInput.h"
+#include "Kismet/GameplayStatics.h"
 #include "Origin/Characters/OBaseCharacter.h"
 #include "Origin/Characters/OPlayerCharacter.h"
 
@@ -20,6 +22,11 @@ void AOPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 	check(WidgetManager);
+
+	if (AOriginGameModeBase* GameMode = GetWorld()->GetAuthGameMode<AOriginGameModeBase>())
+	{
+		GameMode->OnUpdateMatchState.AddUObject(this, &AOPlayerController::UpdateMatchState);
+	}
 }
 
 void AOPlayerController::SetPawn(APawn* InPawn)
@@ -317,5 +324,61 @@ void AOPlayerController::PauseGame()
 	else
 	{
 		GetWorld()->GetAuthGameMode()->ClearPause();
+	}
+}
+
+void AOPlayerController::ResetGame()
+{
+	if (!GetWorld() || !GetWorld()->GetAuthGameMode())
+	{
+		return;
+	}
+	if (IsPressedAnyKeyForAction("Menu"))
+	{
+		return;
+	}
+	if (AOriginGameModeBase* GM = GetWorld()->GetAuthGameMode<AOriginGameModeBase>())
+	{
+		if (GM->GetMatchState() == EOMatchState::GameOver)
+		{
+			GM->ResetLevelOnGameOver();
+		}
+	}
+}
+
+void AOPlayerController::GoToMenu()
+{
+	if (!GetWorld() || !GetWorld()->GetAuthGameMode())
+	{
+		return;
+	}
+	UGameplayStatics::OpenLevel(this, MenuLevelName);
+}
+
+void AOPlayerController::UpdateMatchState(EOMatchState MatchState)
+{
+	bShowMouseCursor = MatchState != EOMatchState::InProgress;
+	MatchState != EOMatchState::InProgress ? SetInputMode(FInputModeGameAndUI()) : SetInputMode(FInputModeGameOnly());
+	switch (MatchState)
+	{
+		case EOMatchState::GameOver:
+		{
+			ChangeState(NAME_Default);
+			if (InputComponent)
+			{
+				EnableInput(this);
+				InputComponent->ClearActionBindings();
+				InputComponent->AxisBindings.Reset();
+				
+				auto& Input3 = InputComponent->BindAction("Menu", EInputEvent::IE_Pressed, this, &AOPlayerController::GoToMenu);
+				Input3.bExecuteWhenPaused = true;
+				
+				auto& Input2 = InputComponent->BindAction("ResetLevel", EInputEvent::IE_Pressed, this, &AOPlayerController::ResetGame);
+				Input2.bExecuteWhenPaused = true;
+
+			}
+			break;
+		}
+		default: ;
 	}
 }

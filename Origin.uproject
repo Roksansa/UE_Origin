@@ -14,7 +14,13 @@
 				"UMG",
 				"AIModule"
 			]
+		},
+		{
+			"Name": "OriginLoadingScreen",
+			"Type": "ClientOnly",
+			"LoadingPhase": "PreLoadingScreen"
 		}
+	
 	],
 	"Plugins": [
 		{

@@ -19,9 +19,11 @@ public class Origin : ModuleRules
 		});
 		PrivateDependencyModuleNames.AddRange(
 			new string[] {
+				"OriginLoadingScreen",
 				"GameplayAbilities",
 				"GameplayTags",
 				"GameplayTasks",
+				"MoviePlayer",
 			}
 		);
 		PrivateIncludePaths.AddRange(new string[] { Name });

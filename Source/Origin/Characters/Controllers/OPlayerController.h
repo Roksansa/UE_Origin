@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OTypes.h"
 #include "GameFramework/PlayerController.h"
 #include "OPlayerController.generated.h"
 
@@ -26,9 +27,6 @@ public:
 
 	void BindWidgets();
 	FPawnChangedSignature& GetOnSetPawnNotifier() { return OnSetPawn; }
-
-	UFUNCTION()
-	void PauseGame();
 protected:
 	
 	virtual void BeginPlay() override;
@@ -66,7 +64,12 @@ private:
 	void NextWeaponIndex();
 	void StartAiming();
 	void StopAiming();
+	void PauseGame();
+	void ResetGame();
+	void GoToMenu();
 
 	// gimbal lock for swim up and swim forward for y = 90. if rotate vector up to forward vector
 	float LastSwimUpValue = 0.f;
+
+	void UpdateMatchState(EOMatchState MatchState);
 };

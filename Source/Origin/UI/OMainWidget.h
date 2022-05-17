@@ -30,6 +30,7 @@ public:
 
 	void OnHideAll(bool bHide);
 	void OnPauseGame(bool bPause);
+	void ChangeGameStatus(bool bGameOver);
 
 	virtual void NativeConstruct() override;
 	
@@ -75,6 +76,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
 	UWidgetAnimation* ShowStats;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Config", meta=(BindWidgetAnim))
+	UWidgetAnimation* ShowGameOverAnim;
 
 	UPROPERTY(BlueprintReadOnly, Category = "Config", meta=(BindWidget))
 	UOPlayerStatsWidget* WBP_Stats;
