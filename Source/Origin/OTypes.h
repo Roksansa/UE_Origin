@@ -29,7 +29,7 @@ const FName OnHealthChangedName = FName("OnHealthChanged");
 const FName AnimDiedName = FName("AnimDied");
 
 const FName MenuLevelName = FName("Menu_Default");
-const FName GymLevelName = FName("Gym_Default");
+const FName GymLevelName = FName("Gym_GameWithAI");
 
 UENUM(BlueprintType)
 enum class EOEquippableItemType : uint8
