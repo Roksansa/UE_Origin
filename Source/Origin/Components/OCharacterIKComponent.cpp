@@ -33,6 +33,9 @@ void UOCharacterIKComponent::BeginPlay()
 	IKLegLiftRealDistance = (IKLegLiftDistance) * IKScale;
 	IKLegBeyondCapsuleRealDistance = IKLegBeyondCapsuleDistance * IKScale;
 	IKTraceRealDistance = IKLegLiftRealDistance + IKLegBeyondCapsuleRealDistance;
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	DebugSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UODebugSubsystem>();
+#endif
 }
 
 
@@ -59,7 +62,6 @@ float UOCharacterIKComponent::GetIKOffsetForSocketName(const FName& SocketName) 
 
 	EDrawDebugTrace::Type EDebugTrace = EDrawDebugTrace::None;
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-	UODebugSubsystem* DebugSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UODebugSubsystem>();
 	EDebugTrace = DebugSubsystem->IsCategoryEnabled(DebugCategory_IKFootCharacter) ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 #endif
 	TArray<AActor*> IgnoreActors;
@@ -103,7 +105,6 @@ FVector UOCharacterIKComponent::GetIKOffsetFromLadderStepForSocketName(const FNa
 	EDrawDebugTrace::Type EDebugTrace = EDrawDebugTrace::None;
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-	UODebugSubsystem* DebugSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UODebugSubsystem>();
 	EDebugTrace = DebugSubsystem->IsCategoryEnabled(DebugCategory_IKFootCharacter) ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 #endif
 	TArray<AActor*> IgnoreActors;
@@ -166,7 +167,6 @@ FVector UOCharacterIKComponent::GetIKHandOffsetFromLadderStepForSocketName(const
 	EDrawDebugTrace::Type EDebugTrace = EDrawDebugTrace::None;
 
 #if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
-	UODebugSubsystem* DebugSubsystem = UGameplayStatics::GetGameInstance(GetWorld())->GetSubsystem<UODebugSubsystem>();
 	EDebugTrace = DebugSubsystem->IsCategoryEnabled(DebugCategory_IKFootCharacter) ? EDrawDebugTrace::ForOneFrame : EDrawDebugTrace::None;
 #endif
 	TArray<AActor*> IgnoreActors;

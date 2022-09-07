@@ -5,6 +5,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "Components/OCharacterIKComponent.h"
+#include "Components/OWeaponComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Origin/Actors/OLadderInteractiveActor.h"
@@ -40,6 +41,9 @@ void UOBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	bIsSwimmingOnSurface = CharacterMovementComponent->IsSwimming() && CurrentCharacter->GetIsOverlapVolumeSurface();
 	bIsOnLadder = CharacterMovementComponent->IsClimbingLadder();
 	ClimbingLadderSpeedRatio = bIsOnLadder ? CharacterMovementComponent->GetClimbingLadderSpeedRatio() : Speed;
+
+	WeaponItemType = CurrentCharacter->GetWeaponComponent()->GetWeaponType();
+	bIsAiming = CurrentCharacter->GetWeaponComponent()->GetAiming();
 	
 	CalcDirection();
 	CalcAimRotation(CurrentCharacter->GetBaseAimRotation());
@@ -65,25 +69,28 @@ void UOBaseCharacterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UOBaseCharacterAnimInstance::CalcDirection()
 {
+	if (CurrentCharacter->GetVelocity().IsZero())
+	{
+		Direction = 0.f;
+		return;
+	}
 	const FVector VelocityNormal = CurrentCharacter->GetVelocity().GetSafeNormal();
-	const FVector ForwardVector = CurrentCharacter->GetActorForwardVector();
+	const FVector ForwardVector = CurrentCharacter->GetActorForwardVector().GetSafeNormal();
 	const float DotProduct = FVector::DotProduct(ForwardVector, VelocityNormal);
 	const FVector CrossProduct = FVector::CrossProduct(ForwardVector, VelocityNormal);
 	const float Degree = UKismetMathLibrary::DegAcos(DotProduct);
-	Direction = Degree * CrossProduct.Z;
+	Direction = FMath::IsNearlyZero(CrossProduct.Z, 0.01f) ? FMath::Abs(Degree) : Degree * FMath::Sign(CrossProduct.Z);
 }
 
 void UOBaseCharacterAnimInstance::CalcAimRotation(const FRotator& Rotator)
 {
 	AimRotation = FRotator::ZeroRotator;
-	AimRotation.Yaw = Rotator.Pitch;
+	AimRotation.Yaw = FMath::Sign(Rotator.Pitch) * FMath::Clamp(FMath::Abs(Rotator.Pitch), MinAimYawIn, MaxAimYawIn);
 	if (CurrentCharacter->IsPlayerControlled())
 	{
-		const float ValueClamped = UKismetMathLibrary::MapRangeClamped(FMath::Abs(Rotator.Pitch), MinAimYawIn,MaxAimYawIn, MinAimPitch, MaxAimPitch);
+		const float ValueClamped = UKismetMathLibrary::MapRangeClamped(FMath::Abs(AimRotation.Yaw), MinAimYawIn,MaxAimYawIn, MinAimPitch, MaxAimPitch);
 		CurrentPitch = UKismetMathLibrary::Lerp(CurrentPitch, ValueClamped, LerpSpeed);
 		AimRotation.Pitch = CurrentPitch;
-		GEngine->AddOnScreenDebugMessage(3, 1.0f, FColor::Orange, FString::Format(TEXT(" IK RightFootSocketRotator {0} -- {1} -- {2} "),
-		{AimRotation.Yaw, AimRotation.Pitch}), true);
 	}
 }
 

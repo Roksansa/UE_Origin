@@ -5,7 +5,9 @@
 
 
 #include "Camera/CameraComponent.h"
+#include "Components/OPrimaryAttributesComponent.h"
 #include "Components/OWeaponComponent.h"
+#include "Controllers/OPlayerController.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Origin/Actors/OLadderInteractiveActor.h"
@@ -30,20 +32,47 @@ AOPlayerCharacter::AOPlayerCharacter()
 	GetCharacterMovement()->CrouchedHalfHeight = 65.f;
 }
 
+void AOPlayerCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	CurrentFOV = CameraComponent->FieldOfView;
+	AOPlayerController* CurrentPlayerController = Cast<AOPlayerController>(GetController());
+	if (CurrentPlayerController != nullptr)
+	{
+		CurrentPlayerController->BindWidgets();
+	}
+}
+
+void AOPlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
+	Super::EndPlay(EndPlayReason);
+}
+
 void AOPlayerCharacter::LookUp(float Value)
 {
-	AddControllerPitchInput(Value);
+	if (!FMath::IsNearlyZero(Value, 1E-06f) && !BaseCharacterMovementComponent->IsClimbingLadder())
+	{
+		AddControllerPitchInput(Value);
+	}
 }
 
 void AOPlayerCharacter::Turn(float Value)
 {
-	AddControllerYawInput(Value);
+	if (!FMath::IsNearlyZero(Value, 1E-06f) && !BaseCharacterMovementComponent->IsClimbingLadder())
+	{
+		AddControllerYawInput(Value);
+	}
 }
 
 void AOPlayerCharacter::MoveRight(float Value)
 {
 	if ((GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling()) && !FMath::IsNearlyZero(Value, 1E-06f))
 	{
+		if (bIsSprinting || BaseCharacterMovementComponent->WillBeActiveSprintInCurrentTick(bIsSprinting) || PrimaryAttributesComponent->GetIsOutOfStamina())
+		{
+			return;
+		}
 		const FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
 		const FVector RightVector = YawRotator.RotateVector(FVector::RightVector);
 		AddMovementInput(RightVector, Value);
@@ -54,6 +83,10 @@ void AOPlayerCharacter::MoveForward(float Value)
 {
 	if ((GetCharacterMovement()->IsMovingOnGround() || GetCharacterMovement()->IsFalling()) && !FMath::IsNearlyZero(Value, 1E-06f))
 	{
+		if (PrimaryAttributesComponent->GetIsOutOfStamina() && Value < 0.f)
+		{
+			return;
+		}
 		const FRotator YawRotator(0.f, GetControlRotation().Yaw, 0.f);
 		const FVector ForwardVector = YawRotator.RotateVector(FVector::ForwardVector);
 		AddMovementInput(ForwardVector, Value);
@@ -62,7 +95,7 @@ void AOPlayerCharacter::MoveForward(float Value)
 
 void AOPlayerCharacter::TurnAtRate(float Value)
 {
-	if (!FMath::IsNearlyZero(Value, 1E-06f))
+	if (!FMath::IsNearlyZero(Value, 1E-06f) /*&& !BaseCharacterMovementComponent->IsClimbingLadder()*/)
 	{
 		AddControllerYawInput(Value * BaseTurnRate * GetWorld()->GetDeltaSeconds());
 	}
@@ -143,7 +176,7 @@ bool AOPlayerCharacter::CanJumpInternal_Implementation() const
 {
 	//test debug message for correct use jump and within variable - now ok
 	//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Black, FString::Format(TEXT("{0} - {1} - {2}"), {bIsCrouched, BaseCharacterMovementComponent->CanUnCrouch(), Super::CanJumpInternal_Implementation()}));
-	return !bIsOutOfStamina && (bIsCrouched && (!BaseCharacterMovementComponent || BaseCharacterMovementComponent->CanGrowCapsule()) ||
+	return !PrimaryAttributesComponent->GetIsOutOfStamina() && (bIsCrouched && BaseCharacterMovementComponent->CanGrowCapsule() ||
 	                            Super::CanJumpInternal_Implementation());
 }
 
@@ -189,7 +222,7 @@ void AOPlayerCharacter::MoveSwimUp(float Value)
 				FString::Format(TEXT(" bIsOverlapVolumeSurface {0} "), {bIsOverlapVolumeSurface}), true, FVector2D(2, 2));
 			FVector JumpDir(0.f);
 			FVector WallNormal(0.f);
-			if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->ShouldJumpOutOfWater(JumpDir) &&
+			if (BaseCharacterMovementComponent->ShouldJumpOutOfWater(JumpDir) &&
 			    BaseCharacterMovementComponent->CheckWaterJump(JumpDir, WallNormal))
 			{
 				GEngine->AddOnScreenDebugMessage(1, 1.0f, FColor::Red,
@@ -207,12 +240,8 @@ void AOPlayerCharacter::OnStartSwimming(float HalfHeightAdjust, float ScaledHeig
 {
 	Super::OnStartSwimming(HalfHeightAdjust, ScaledHeightAdjust);
 
-	if (IsValid(BaseCharacterMovementComponent))
-	{
-		bUseControllerRotationYaw = false;
-		BaseCharacterMovementComponent->bOrientRotationToMovement = true;
-	}
-	
+	BaseCharacterMovementComponent->bOrientRotationToMovement = true;
+
 	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(GetClass());
 	SpringArmComponent->TargetOffset = DefaultChar->SpringArmComponent->TargetOffset;
 	if (GetMesh() && DefaultChar->GetMesh())
@@ -228,11 +257,9 @@ void AOPlayerCharacter::OnStartSwimming(float HalfHeightAdjust, float ScaledHeig
 void AOPlayerCharacter::OnEndSwimming(float HalfHeightAdjust, float ScaledHeightAdjust)
 {
 	Super::OnEndSwimming(HalfHeightAdjust, ScaledHeightAdjust);
-	if (IsValid(BaseCharacterMovementComponent))
-	{
-		bUseControllerRotationYaw = true;
-		BaseCharacterMovementComponent->bOrientRotationToMovement = false;
-	}
+	
+	BaseCharacterMovementComponent->bOrientRotationToMovement = false;
+
 	const AOPlayerCharacter* DefaultChar = GetDefault<AOPlayerCharacter>(GetClass());
 	SpringArmComponent->TargetOffset = DefaultChar->SpringArmComponent->TargetOffset;
 	if (GetMesh() && DefaultChar->GetMesh())
@@ -254,26 +281,39 @@ void AOPlayerCharacter::ClimbLadder(float Value)
 	}
 }
 
-void AOPlayerCharacter::InteractionWithLadder()
+void AOPlayerCharacter::StartFire()
 {
-	if (BaseCharacterMovementComponent->IsClimbingLadder())
+	Super::StartFire();
+	if (WeaponComponent->GetWeaponType() == EOEquippableItemType::None || !CanUseWeapon())
 	{
-		BaseCharacterMovementComponent->DetachFromLadder(true);
+		return;
 	}
-	else
+	bWantFire = true;
+	BaseCharacterMovementComponent->bNeedRotationForFire = bWantFire;
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(CheckFireTimerHandle, [this]()
 	{
-		const AOLadderInteractiveActor* Ladder = GetAvailableLadder();
-		if (!IsValid(Ladder))
+		const bool bAllowFire = CanUseWeapon();
+		BaseCharacterMovementComponent->bNeedRotationForFire = bAllowFire && bWantFire;
+		if (bAllowFire && bWantFire && WeaponComponent->GetState() == EOWeaponUseState::Idle)
 		{
+			OnAllowFire.Broadcast(bAllowFire);
 			return;
 		}
-		BaseCharacterMovementComponent->AttachLadder(Ladder);
-	}
+
+		if (!bAllowFire && WeaponComponent->GetState() == EOWeaponUseState::Fire)
+		{
+			OnAllowFire.Broadcast(bAllowFire);
+		}
+	}, 0.5f, true);
 }
 
-void AOPlayerCharacter::Fire()
+void AOPlayerCharacter::StopFire()
 {
-	WeaponComponent->Fire();
+	Super::StopFire();
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
+	bWantFire = false;
+	BaseCharacterMovementComponent->bNeedRotationForFire = false;
 }
 
 float AOPlayerCharacter::GetViewPitchMin() const
@@ -284,4 +324,33 @@ float AOPlayerCharacter::GetViewPitchMin() const
 float AOPlayerCharacter::GetViewPitchMax() const
 {
 	return ViewPitchMax;
+}
+
+void AOPlayerCharacter::OnDie()
+{
+	Super::OnDie();
+	GetWorld()->GetTimerManager().ClearTimer(CheckFireTimerHandle);
+}
+
+void AOPlayerCharacter::OnChangeHealth(float Health, float Diff, float MaxValue)
+{
+	Super::OnChangeHealth(Health, Diff, MaxValue);
+	if (Diff < 0)
+	{
+		PlayCameraShake();
+	}
+}
+
+void AOPlayerCharacter::PlayCameraShake() const
+{
+	if (PrimaryAttributesComponent->IsDead())
+	{
+		return;
+	}
+	const APlayerController* PController = GetController<APlayerController>();
+	if (!PController || !PController->PlayerCameraManager)
+	{
+		return;
+	}
+	PController->PlayerCameraManager->PlayCameraShake(CameraShake);
 }

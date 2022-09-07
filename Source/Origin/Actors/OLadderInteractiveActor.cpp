@@ -27,7 +27,9 @@ AOLadderInteractiveActor::AOLadderInteractiveActor()
 
 void AOLadderInteractiveActor::OnConstruction(const FTransform& Transform)
 {
-	if (StepsInterval < 0.01 || Height< 0.01f || Width < 0.01f)
+	Super::OnConstruction(Transform);
+#if WITH_EDITOR
+	if (!GIsEditor || StepsInterval < 0.01 || Height< 0.01f || Width < 0.01f)
 	{
 		return;
 	}
@@ -81,6 +83,8 @@ void AOLadderInteractiveActor::OnConstruction(const FTransform& Transform)
 	const float BoxDepthExtend = InteractionBox->GetUnscaledBoxExtent().X;
 	InteractionBox->SetBoxExtent(FVector(BoxDepthExtend, Width*0.5f, Height * 0.5f));
 	InteractionBox->SetRelativeLocation(FVector(BoxDepthExtend, 0, Height * 0.5f));
+	
+#endif
 }
 
 float AOLadderInteractiveActor::GetHeight() const

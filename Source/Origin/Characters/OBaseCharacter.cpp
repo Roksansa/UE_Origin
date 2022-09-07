@@ -4,7 +4,9 @@
 #include "OBaseCharacter.h"
 
 #include "Actors/Weapon/OBaseWeapon.h"
+#include "Components/CapsuleComponent.h"
 #include "Components/OCharacterIKComponent.h"
+#include "Components/OPrimaryAttributesComponent.h"
 #include "Components/OWeaponComponent.h"
 #include "Curves/CurveVector.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -26,27 +28,35 @@ AOBaseCharacter::AOBaseCharacter(const FObjectInitializer& ObjectInitializer)
 	LedgeDetectorComponent = CreateDefaultSubobject<UOLedgeDetectorComponent>(TEXT("LedgeDetector"));
 	IKComponent = CreateDefaultSubobject<UOCharacterIKComponent>(TEXT("CharacterIKComponent"));
 	WeaponComponent = CreateDefaultSubobject<UOWeaponComponent>(TEXT("WeaponComponent"));
+	PrimaryAttributesComponent = CreateDefaultSubobject<UOPrimaryAttributesComponent>(TEXT("AttributesComponent"));
 }
 
 void AOBaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	CurrentStamina = MaxStamina;
-	if (MinStaminaForStartSprint > MaxStamina)
-	{
-		MinStaminaForStartSprint = MaxStamina;
-	}
+	check(PrimaryAttributesComponent);
+	check(BaseCharacterMovementComponent);
+	check(WeaponComponent);
+
+	PrimaryAttributesComponent->OnDie.AddUObject(this, &AOBaseCharacter::OnDie);
+	PrimaryAttributesComponent->OnChangeHealth.AddUObject(this, &AOBaseCharacter::OnChangeHealth);
+}
+
+void AOBaseCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
+	Super::EndPlay(EndPlayReason);
 }
 
 void AOBaseCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-	TryChangeStamina(DeltaSeconds);
+	PrimaryAttributesComponent->TryChangeStamina(DeltaSeconds, bIsSprinting);
 }
 
 bool AOBaseCharacter::GetIsOutOfStamina() const
 {
-	return bIsOutOfStamina;
+	return PrimaryAttributesComponent->GetIsOutOfStamina();
 }
 
 bool AOBaseCharacter::GetIsCrawling() const
@@ -61,18 +71,12 @@ void AOBaseCharacter::SetIsCrawling(bool bCrawl)
 
 void AOBaseCharacter::UnCrawl(bool bClientSimulation)
 {
-	if (BaseCharacterMovementComponent)
-	{
-		BaseCharacterMovementComponent->bWantsToCrawling = false;
-	}
+	BaseCharacterMovementComponent->bWantsToCrawling = false;
 }
 
 void AOBaseCharacter::Crawl(bool bClientSimulation)
 {
-	if (BaseCharacterMovementComponent)
-	{
-		BaseCharacterMovementComponent->bWantsToCrawling = true;
-	}
+	BaseCharacterMovementComponent->bWantsToCrawling = true;
 }
 
 void AOBaseCharacter::ChangeCrouchState()
@@ -81,7 +85,7 @@ void AOBaseCharacter::ChangeCrouchState()
 	{
 		return;
 	}
-	if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->bWantsToCrawling || GetCharacterMovement()->IsCrouching())
+	if (BaseCharacterMovementComponent->bWantsToCrawling || GetCharacterMovement()->IsCrouching())
 	{
 		UnCrouch();
 	}
@@ -97,14 +101,134 @@ void AOBaseCharacter::ChangeCrawlState()
 	{
 		return;
 	}
-	if (BaseCharacterMovementComponent && GetBaseCharacterMovementComponent()->IsCrawling())
+	if (BaseCharacterMovementComponent->IsCrawling())
 	{
 		UnCrawl();
 	}
-	else if (GetCharacterMovement()->IsCrouching())
+	else if (BaseCharacterMovementComponent->IsCrouching())
 	{
 		Crawl();
 	}
+}
+
+bool AOBaseCharacter::CanUseWeapon() const
+{
+	const bool bWalkingMode = BaseCharacterMovementComponent->MovementMode == EMovementMode::MOVE_Walking || BaseCharacterMovementComponent->MovementMode ==
+	                          EMovementMode::MOVE_NavWalking;
+	if (PrimaryAttributesComponent->GetIsOutOfStamina() || bIsSprinting || !bWalkingMode)
+	{
+		return false;
+	}
+	return true;
+}
+
+void AOBaseCharacter::OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode)
+{
+	if (BaseCharacterMovementComponent->MovementMode == MOVE_Swimming)
+	{
+		WeaponComponent->NextWeapon(1);
+	}
+	Super::OnMovementModeChanged(PrevMovementMode, PreviousCustomMode);
+}
+
+void AOBaseCharacter::InteractionWithLadder()
+{
+	if(BaseCharacterMovementComponent->IsMantling())
+	{
+		return;
+	}
+	
+	if (BaseCharacterMovementComponent->IsClimbingLadder())
+	{
+		BaseCharacterMovementComponent->DetachFromLadder(true);
+	}
+	else
+	{
+		const AOLadderInteractiveActor* Ladder = GetAvailableLadder();
+		if (!IsValid(Ladder))
+		{
+			return;
+		}
+		BaseCharacterMovementComponent->AttachLadder(Ladder);
+	}
+}
+
+void AOBaseCharacter::StartFire()
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->StartFire();
+}
+
+void AOBaseCharacter::StopFire()
+{
+	WeaponComponent->StopFire();
+}
+
+void AOBaseCharacter::ReloadAmmo()
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->ReloadAmmo();
+}
+
+void AOBaseCharacter::NextWeapon()
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->NextWeapon();
+}
+
+void AOBaseCharacter::NextWeaponIndex(int32 NumberWeapon)
+{
+	if (!CanUseWeapon())
+	{
+		return;
+	}
+	WeaponComponent->NextWeapon(NumberWeapon);
+}
+
+void AOBaseCharacter::StartAiming()
+{
+	if (WeaponComponent->GetWeaponType() == EOEquippableItemType::None || !CanUseWeapon())
+	{
+		return;
+	}
+
+	bWantAiming = true;
+	OnChangeAiming.Broadcast(bWantAiming);
+	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
+	GetWorld()->GetTimerManager().SetTimer(CheckAimingTimerHandle, [this]()
+	{
+		const bool bAllowAiming = CanUseWeapon();
+
+		if (bAllowAiming && bWantAiming && !WeaponComponent->GetAiming() && WeaponComponent->GetState() != EOWeaponUseState::None)
+		{
+			OnChangeAiming.Broadcast(bAllowAiming);
+			return;
+		}
+
+		if (!bAllowAiming && bWantAiming && WeaponComponent->GetAiming() && WeaponComponent->GetState() != EOWeaponUseState::None)
+		{
+			OnChangeAiming.Broadcast(bAllowAiming);
+		}
+	}, 0.5f, true);
+}
+
+void AOBaseCharacter::StopAiming()
+{
+	if (bWantAiming)
+	{
+		bWantAiming = false;
+		OnChangeAiming.Broadcast(bWantAiming);
+	}
+	GetWorld()->GetTimerManager().ClearTimer(CheckAimingTimerHandle);
 }
 
 UOBaseCharacterMovementComponent* AOBaseCharacter::GetBaseCharacterMovementComponent() const
@@ -119,74 +243,32 @@ UOCharacterIKComponent* AOBaseCharacter::GetIKComponent() const
 
 bool AOBaseCharacter::CanSprint()
 {
-	if (BaseCharacterMovementComponent)
-	{
-		return !bIsOutOfStamina && !bIsCrawling && BaseCharacterMovementComponent->CanSprint();
-	}
-
-	return !bIsOutOfStamina;
+	return !PrimaryAttributesComponent->GetIsOutOfStamina() && !bIsCrawling && BaseCharacterMovementComponent->CanSprint();
 }
 
-void AOBaseCharacter::TryChangeStamina(float DeltaSeconds)
-{
-	//check if !bIsSprinting
-	if (!bIsSprinting && CurrentStamina < MaxStamina)
-	{
-		CurrentStamina = FMath::Min(CurrentStamina + StaminaRestoreVelocity * DeltaSeconds, MaxStamina);
-	}
-	//check if bIsSprinting
-	if (bIsSprinting && CurrentStamina > 0.0001f)
-	{
-		CurrentStamina = FMath::Max(CurrentStamina - SprintStaminaConsumptionVelocity * DeltaSeconds, 0.f);
-	}
-
-	//switch IsOutOfStamina after all calc
-	//first - we can not start sprint - change and return
-	if (!bIsOutOfStamina && CurrentStamina <= 0.0001f)
-	{
-		bIsOutOfStamina = true;
-	}
-	//second - we can start sprint - change and return
-	if (bIsOutOfStamina && CurrentStamina >= MinStaminaForStartSprint)
-	{
-		bIsOutOfStamina = false;
-	}
-
-	if (CurrentStamina < MaxStamina)
-	{
-		const FColor CurrentColor = bIsOutOfStamina ? FColor::Red : FColor::Green;
-		GEngine->AddOnScreenDebugMessage(1, 1.0f, CurrentColor, FString::Printf(TEXT("Stamina: %.2f"), CurrentStamina), true,
-			FVector2D(2, 2));
-	}
-}
 
 void AOBaseCharacter::ChangeSprint(bool bWantsToSprint)
 {
-	if (BaseCharacterMovementComponent)
+	if (bWantsToSprint)
 	{
-		if (bWantsToSprint)
+		if (CanSprint())
 		{
-			if (CanSprint())
-			{
-				BaseCharacterMovementComponent->bWantsToSprint = true;
-			}
+			BaseCharacterMovementComponent->bWantsToSprint = true;
 		}
-		else
-		{
-			BaseCharacterMovementComponent->bWantsToSprint = false;
-		}
+	}
+	else
+	{
+		BaseCharacterMovementComponent->bWantsToSprint = false;
 	}
 }
 
 void AOBaseCharacter::Jump()
 {
-	if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->IsMantling())
+	if (BaseCharacterMovementComponent->IsMantling())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Green,
-			FString::Format(TEXT(" JumpMantle CHECK {0} "), {BaseCharacterMovementComponent->IsMantling()}));
 		return;
 	}
-	if (bIsCrawling && BaseCharacterMovementComponent)
+	if (bIsCrawling)
 	{
 		BaseCharacterMovementComponent->bWantsToCrawling = false;
 		BaseCharacterMovementComponent->bWantsToCrouch = false;
@@ -196,7 +278,6 @@ void AOBaseCharacter::Jump()
 	{
 		GetCharacterMovement()->bWantsToCrouch = false;
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 1.0f, FColor::Red, FString::Format(TEXT("Jump Mantle {0} "), {false}));
 	Super::Jump();
 }
 
@@ -230,11 +311,30 @@ const AOLadderInteractiveActor* AOBaseCharacter::GetAvailableLadder() const
 	return Result;
 }
 
-void AOBaseCharacter::FillMantlingMovementParameters(FLedgeDescription LedgeDescription,
-	FMantlingMovementParameters& MantlingMovementParameters) const
+bool AOBaseCharacter::GetIsOverlapVolumeSurface() const
+{
+	return bIsOverlapVolumeSurface;
+}
+
+void AOBaseCharacter::ChangeBuoyancyFromSurfaceVolume(bool bIsOverlapVolumeSurfaceNow)
+{
+	bIsOverlapVolumeSurface = bIsOverlapVolumeSurfaceNow;
+	if (GetCharacterMovement())
+	{
+		ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
+		GetCharacterMovement()->Buoyancy = bIsOverlapVolumeSurface
+											   ? BuoyancyInWaterSurface
+											   : DefaultCharacter->GetCharacterMovement()->Buoyancy;
+	}
+}
+
+void AOBaseCharacter::FillMantlingMovementParameters(FOLedgeDescription LedgeDescription,
+	FOMantlingMovementParameters& MantlingMovementParameters) const
 {
 	MantlingMovementParameters.InitialLocation = GetActorLocation();
-	MantlingMovementParameters.InitialRotation = GetActorRotation();
+	MantlingMovementParameters.InitialRotation = BaseCharacterMovementComponent->IsClimbingLadder()
+		                                             ? FRotator(0, LedgeDescription.Rotation.Yaw, 0)
+		                                             : GetActorRotation();
 	MantlingMovementParameters.TargetLocation = LedgeDescription.Location;
 	MantlingMovementParameters.TargetRotation = LedgeDescription.Rotation;
 
@@ -261,14 +361,14 @@ const FOMantlingSettings& AOBaseCharacter::GetMantlingSettings(float LedgeHeight
 
 void AOBaseCharacter::Mantle()
 {
-	if (BaseCharacterMovementComponent && BaseCharacterMovementComponent->IsMantling() || bIsCrawling)
+	if (BaseCharacterMovementComponent->IsMantling() || bIsCrawling)
 	{
 		return;
 	}
-	FLedgeDescription LedgeDescription;
+	FOLedgeDescription LedgeDescription;
 	if (LedgeDetectorComponent->TryDetectLedge(LedgeDescription))
 	{
-		FMantlingMovementParameters MantlingMovementParameters;
+		FOMantlingMovementParameters MantlingMovementParameters;
 		FillMantlingMovementParameters(LedgeDescription, MantlingMovementParameters);
 
 		BaseCharacterMovementComponent->StartMantle(MantlingMovementParameters);
@@ -286,23 +386,6 @@ void AOBaseCharacter::Mantle()
 	}
 }
 
-bool AOBaseCharacter::GetIsOverlapVolumeSurface() const
-{
-	return bIsOverlapVolumeSurface;
-}
-
-void AOBaseCharacter::ChangeBuoyancyFromSurfaceVolume(bool bIsOverlapVolumeSurfaceNow)
-{
-	bIsOverlapVolumeSurface = bIsOverlapVolumeSurfaceNow;
-	if (GetCharacterMovement())
-	{
-		ACharacter* DefaultCharacter = GetClass()->GetDefaultObject<ACharacter>();
-		GetCharacterMovement()->Buoyancy = bIsOverlapVolumeSurface
-			                                   ? BuoyancyInWaterSurface
-			                                   : DefaultCharacter->GetCharacterMovement()->Buoyancy;
-	}
-}
-
 void AOBaseCharacter::RegisterInteractiveActor(AOInteractiveActor* InterActor)
 {
 	AvailableInteractiveActors.Add(InterActor);
@@ -312,3 +395,121 @@ void AOBaseCharacter::UnregisterInteractiveActor(AOInteractiveActor* InterActor)
 {
 	AvailableInteractiveActors.Remove(InterActor);
 }
+
+const UOWeaponComponent* AOBaseCharacter::GetWeaponComponent() const
+{
+	return WeaponComponent;
+}
+
+bool AOBaseCharacter::IsWeaponInHand() const
+{
+	return WeaponComponent->GetWeaponType() != EOEquippableItemType::None;
+}
+
+void AOBaseCharacter::BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name, bool bWithUpdate)
+{
+	if (!IsValid(Object))
+	{
+		return;
+	}
+	switch (Type)
+	{
+		case EOPrimaryAttr::Health:
+		{
+			PrimaryAttributesComponent->OnChangeHealth.AddUFunction(Object, Name);
+			if (bWithUpdate)
+			{
+				PrimaryAttributesComponent->UpdateHealth();
+			}
+			break;
+		}
+		case EOPrimaryAttr::Stamina:
+		{
+			PrimaryAttributesComponent->OnChangeStamina.AddUFunction(Object, Name);
+			if (bWithUpdate)
+			{
+				PrimaryAttributesComponent->UpdateStamina();
+			}
+			break;
+		}
+		case EOPrimaryAttr::Die:
+		{
+			PrimaryAttributesComponent->OnDie.AddUFunction(Object, Name);
+			break;
+		}
+		default: ;
+	}
+}
+
+FOnNotifyChangeWeapon& AOBaseCharacter::GetOnNotifyChangeWeapon()
+{
+	return WeaponComponent->OnNotifyChangeWeapon;
+}
+
+FOnNotifyUpdatedAmmoWeapon& AOBaseCharacter::GetOnNotifyUpdatedAmmoWeapon()
+{
+	return WeaponComponent->OnNotifyUpdatedAmmoWeapon;
+}
+
+bool AOBaseCharacter::TryAddAmmo(const EOAmmoType& Type, int32 Count)
+{
+	return WeaponComponent->AddAmmo(Type, Count);
+}
+
+bool AOBaseCharacter::TryAddBoosters(const EOBoostingType& Type, int32 Value)
+{
+	bool bResult = false;
+	switch (Type)
+	{
+		case EOBoostingType::Health:
+		{
+			bResult = PrimaryAttributesComponent->TryAddHealth(Value);
+			break;
+		}
+		case EOBoostingType::Stamina:
+		{
+			bResult = PrimaryAttributesComponent->TryAddStamina(Value);
+		}
+		default: ;
+	}
+	return bResult;
+}
+
+bool AOBaseCharacter::IsDie() const
+{
+	return PrimaryAttributesComponent->IsDead();
+}
+
+void AOBaseCharacter::OnDie()
+{
+	StopAnimMontage();
+	PlayAnimMontage(DeathAnimMontage);
+	GetCharacterMovement()->DisableMovement();
+	GetCapsuleComponent()->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+	WeaponComponent->StopFire();
+	if (Controller)
+	{
+		Controller->DisableInput(nullptr);
+		Controller->ChangeState(NAME_Spectating);
+	}
+}
+
+void AOBaseCharacter::OnChangeHealth(float Health, float Diff, float MaxValue)
+{
+	if (!PrimaryAttributesComponent->IsDead() && Diff < 0)
+	{
+		const FOWeaponAnimDescription Desc = WeaponComponent->GetWeaponAnimDescription();
+		PlayAnimMontage(Desc.HitAnimMontage);
+	}
+}
+
+void AOBaseCharacter::SetCharacterColor(const FLinearColor& LinearColor)
+{
+	const auto MaterialInst = GetMesh()->CreateAndSetMaterialInstanceDynamic(0);
+	if (!MaterialInst)
+	{
+		return;
+	}
+	MaterialInst->SetVectorParameterValue(MaterialColorName, LinearColor);
+}
+

@@ -10,16 +10,16 @@ bool OTraceUtils::SweepCapsuleSingleByChannel(const UWorld* InWorld, struct FHit
 	bool bResult = false;
 
 	const FCollisionShape CapsuleShape = FCollisionShape::MakeCapsule(CapsuleRadius, CapsuleHalfHeight);
-	bResult = InWorld->SweepSingleByChannel(OutHit, Start, End, FQuat::Identity, TraceChannel, CapsuleShape, Params, ResponseParam);
+	bResult = InWorld->SweepSingleByChannel(OutHit, Start, End, Rot, TraceChannel, CapsuleShape, Params, ResponseParam);
 
 #if ENABLE_DRAW_DEBUG
 	if (bDrawDebug)
 	{
-		DrawDebugCapsule(InWorld, Start, CapsuleHalfHeight, CapsuleRadius, FQuat::Identity, TraceColor, false, DrawTime);
-		DrawDebugCapsule(InWorld, End, CapsuleHalfHeight, CapsuleRadius, FQuat::Identity, TraceColor, false, DrawTime);
-		if (bResult )
+		DrawDebugCapsule(InWorld, Start, CapsuleHalfHeight, CapsuleRadius, Rot, TraceColor, false, DrawTime);
+		DrawDebugCapsule(InWorld, End, CapsuleHalfHeight, CapsuleRadius, Rot, TraceColor, false, DrawTime);
+		if (bResult)
 		{
-			DrawDebugCapsule(InWorld, OutHit.Location, CapsuleHalfHeight, CapsuleRadius, FQuat::Identity, HitColor, false, DrawTime);
+			DrawDebugCapsule(InWorld, OutHit.Location, CapsuleHalfHeight, CapsuleRadius, Rot, HitColor, false, DrawTime);
 			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 20.f, HitColor, false, DrawTime);
 		}
 	}
@@ -27,6 +27,30 @@ bool OTraceUtils::SweepCapsuleSingleByChannel(const UWorld* InWorld, struct FHit
 	
 	return bResult;
 }
+
+bool OTraceUtils::SweepBoxSingleByChannel(const UWorld* InWorld, struct FHitResult& OutHit, const FVector& Start, const FVector& End, FVector& BoxHalfExtent, const FQuat& Rot, ECollisionChannel TraceChannel, const FCollisionQueryParams& Params, const FCollisionResponseParams& ResponseParam, bool bDrawDebug, float DrawTime, FColor TraceColor, FColor HitColor)
+{
+	bool bResult = false;
+
+	const FCollisionShape BoxShape = FCollisionShape::MakeBox(BoxHalfExtent);
+	bResult = InWorld->SweepSingleByChannel(OutHit, Start, End, Rot, TraceChannel, BoxShape, Params, ResponseParam);
+
+#if ENABLE_DRAW_DEBUG
+	if (bDrawDebug)
+	{
+		DrawDebugBox(InWorld, Start, BoxHalfExtent, Rot, TraceColor, false, DrawTime);
+		DrawDebugBox(InWorld, End, BoxHalfExtent, Rot, TraceColor, false, DrawTime);
+		if (bResult)
+		{
+			DrawDebugBox(InWorld, OutHit.Location, BoxHalfExtent, Rot, HitColor, false, DrawTime);
+			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 10.f, HitColor, false, DrawTime);
+		}
+	}
+#endif
+	
+	return bResult;
+}
+
 
 bool OTraceUtils::SweepSphereSingleByChannel(const UWorld* InWorld, FHitResult& OutHit, const FVector& Start, const FVector& End, float SphereRadius, ECollisionChannel TraceChannel, const FCollisionQueryParams& Params, const FCollisionResponseParams& ResponseParam, bool bDrawDebug, float DrawTime, FColor TraceColor, FColor HitColor)
 {
@@ -43,7 +67,7 @@ bool OTraceUtils::SweepSphereSingleByChannel(const UWorld* InWorld, FHitResult& 
 		const float StartDrawCapsuleHalfHeight = (TraceVector).Size() * 0.5f;
 		const FQuat DebugCapsuleRotation = FRotationMatrix::MakeFromZ(TraceVector).ToQuat();
 		DrawDebugCapsule(InWorld, StartDrawCapsuleLocation, StartDrawCapsuleHalfHeight, SphereRadius, DebugCapsuleRotation, TraceColor, false, DrawTime);
-		if (bResult )
+		if (bResult)
 		{
 			DrawDebugSphere(InWorld, OutHit.Location, SphereRadius, 32, HitColor, false, DrawTime);
 			DrawDebugPoint(InWorld, OutHit.ImpactPoint, 20.f, HitColor, false, DrawTime);
@@ -81,7 +105,7 @@ bool OTraceUtils::OverlapCapsuleBlockingByProfile(const UWorld* InWorld, const F
 #if ENABLE_DRAW_DEBUG
 	if (bDrawDebug)
 	{
-		DrawDebugCapsule(InWorld, Pos, CapsuleHalfHeight, CapsuleRadius, Rot, !bResult ? TraceColor : HitColor, false, DrawTime);
+		DrawDebugCapsule(InWorld, Pos, CapsuleHalfHeight, CapsuleRadius+5.f, Rot, !bResult ? TraceColor : HitColor, false, DrawTime, 0, 3.f);
 	}
 #endif
 	

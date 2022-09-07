@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "OTypes.h"
+#include "Components/OWeaponComponent.h"
 #include "GameFramework/Character.h"
 #include "Settings/OMantlingSettings.h"
 
@@ -14,6 +16,9 @@ class UOCharacterIKComponent;
 class UOLedgeDetectorComponent;
 class AOLadderInteractiveActor;
 class UOWeaponComponent;
+class UOPrimaryAttributesComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangeAiming, bool, bIsAiming);
 
 UCLASS(Abstract, NotBlueprintable)
 class ORIGIN_API AOBaseCharacter : public ACharacter
@@ -25,13 +30,15 @@ public:
 	AOBaseCharacter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	
 	virtual void LookUp(float Value) {}
 	virtual void Turn(float Value) {}
-	virtual void MoveRight(float Value) {};
-	virtual void MoveForward(float Value) {};
+	virtual void MoveRight(float Value) {}
+	virtual void MoveForward(float Value) {}
 
-	virtual void TurnAtRate(float Value) {};
-	virtual void LookUpAtRate(float Value) {};
+	virtual void TurnAtRate(float Value) {}
+	virtual void LookUpAtRate(float Value) {}
 
 	virtual void ChangeCrouchState();
 	virtual void ChangeCrawlState();
@@ -42,10 +49,19 @@ public:
 	virtual void MoveSwimForward(float Value, float LastSwimUpValue) {};
 	virtual void MoveSwimUp(float Value) {};
 	
-	virtual void InteractionWithLadder(){};
+	virtual void InteractionWithLadder();;
 	virtual void ClimbLadder(float Value) {};
 	
-	virtual void Fire(){};
+	virtual void StartFire();
+	virtual void StopFire();
+	virtual void ReloadAmmo();
+	virtual void NextWeapon();
+	virtual void NextWeaponIndex(int32 NumberWeapon);
+	virtual void StartAiming();
+	virtual void StopAiming();
+	bool CanUseWeapon() const;
+
+	virtual void OnMovementModeChanged(EMovementMode PrevMovementMode, uint8 PreviousCustomMode) override;
 	
 	UOBaseCharacterMovementComponent* GetBaseCharacterMovementComponent() const;
 
@@ -84,6 +100,21 @@ public:
 	void RegisterInteractiveActor(AOInteractiveActor* InterActor);
 	void UnregisterInteractiveActor(AOInteractiveActor* InterActor);
 
+	const UOWeaponComponent* GetWeaponComponent() const;
+	bool IsWeaponInHand() const;
+	
+	void BindOnChangePrimaryAttribute(EOPrimaryAttr Type, UObject* Object, FName Name, bool bWithUpdate = false);
+
+	UPROPERTY(BlueprintAssignable)
+	FOnChangeAiming OnChangeAiming;
+
+	FOnNotifyChangeWeapon& GetOnNotifyChangeWeapon();
+	FOnNotifyUpdatedAmmoWeapon& GetOnNotifyUpdatedAmmoWeapon();
+	bool TryAddAmmo(const EOAmmoType& Type, int32 Count);
+	bool TryAddBoosters(const EOBoostingType& Type, int32 Value);
+	bool IsDie() const;
+	
+	void SetCharacterColor(const FLinearColor& LinearColor);
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Character|Input")
 	float BaseTurnRate = 45.f;
@@ -100,21 +131,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	UOWeaponComponent* WeaponComponent;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UOPrimaryAttributesComponent* PrimaryAttributesComponent;
+
 	virtual bool CanSprint();
-
-	//begin stamina properties
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float MaxStamina = 30.f; 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float StaminaRestoreVelocity = 7.f; 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float SprintStaminaConsumptionVelocity = 10.f;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category= "Config|Stamina", meta = (ClampMin = 0.f, UIMin = 0.f))
-	float MinStaminaForStartSprint = 30.f;
-
-	void TryChangeStamina(float DeltaSeconds);
-	bool bIsOutOfStamina;
-	//end stamina properties
 
 	UPROPERTY(BlueprintReadOnly, Category = "Config|Crawling")
 	uint32 bIsCrawling:1;
@@ -137,9 +157,21 @@ protected:
 	TArray<AOInteractiveActor*> AvailableInteractiveActors;
 
 	const AOLadderInteractiveActor* GetAvailableLadder() const;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Anim")
+	UAnimMontage* DeathAnimMontage;
+	UFUNCTION()
+	virtual void OnDie();
+
+	UFUNCTION()
+	virtual void OnChangeHealth(float Health, float Diff, float MaxValue);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Config|Materials")
+	FName MaterialColorName = "BodyColor";
 private:
-	void FillMantlingMovementParameters(struct FLedgeDescription LedgeDescription, FMantlingMovementParameters& MantlingMovementParameters) const;
+	void FillMantlingMovementParameters(struct FOLedgeDescription LedgeDescription, FOMantlingMovementParameters& MantlingMovementParameters) const;
 	const FOMantlingSettings& GetMantlingSettings(float LedgeHeight) const;
 
-	float CurrentStamina = 0.f;
+	bool bWantAiming = false;
+	FTimerHandle CheckAimingTimerHandle;
 };

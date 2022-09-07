@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Origin/Characters/Settings/OMantlingSettings.h"
-#include "Origin/Components/OLedgeDetectorComponent.h"
 #include "OBaseCharacterMovementComponent.generated.h"
 
 UENUM()
@@ -37,6 +36,8 @@ public:
 	bool IsSprinting() const;
 	void ChangeSprint(bool bStartSprint);
 	bool CanSprintInCurrentState() const;
+	/** Using only movement component and this owner. */
+	bool WillBeActiveSprintInCurrentTick(bool bIsSprinting) const;
 	/** If true, try to Sprint (or keep Sprinting) on next update. If false, try to stop Sprint on next update. */
 	UPROPERTY(Category="Character Movement (General Settings)", VisibleInstanceOnly, BlueprintReadOnly)
 	uint8 bWantsToSprint:1;
@@ -50,6 +51,7 @@ public:
 	virtual void UpdateCharacterStateBeforeMovement(float DeltaSeconds) override;
 	virtual void UpdateCharacterStateAfterMovement(float DeltaSeconds) override;
 	virtual bool ShouldRemainVertical() const override;
+	virtual void BaseCharacterDefaultPhysRotation(float DeltaTime);
 	virtual void PhysicsRotation(float DeltaTime) override;
 
 	virtual float GetMaxSpeed() const override;
@@ -70,7 +72,7 @@ public:
 	virtual void StopCrawl();
 	//end crawl
 
-	virtual void StartMantle(const FMantlingMovementParameters& MantlingMovementParameters);
+	virtual void StartMantle(const FOMantlingMovementParameters& MantlingMovementParameters);
 	virtual void StopMantle();
 	bool IsMantling() const;
 
@@ -81,6 +83,7 @@ public:
 	const AOLadderInteractiveActor* GetCurrentLadder() const;
 	float GetClimbingLadderSpeedRatio() const;
 	float GetLadderToCharacterOffset() const;
+	bool bNeedRotationForFire = false;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Character Movement: Crawl" , meta=(ClampMin="0", UIMin="0"))
 	float MaxCrawlSpeed = 100.0f;
@@ -89,9 +92,11 @@ protected:
 	float CrawlingHalfHeight = 20.f;
 
 	virtual void OnMovementModeChanged(EMovementMode PreviousMovementMode, uint8 PreviousCustomMode) override;
+	virtual void SetMovementMode(EMovementMode NewMovementMode, uint8 NewCustomMode = 0) override;
 	virtual void PhysCustom(float DeltaTime, int32 Iterations) override;
 	virtual void PhysMantling(float DeltaTime, int32 Iterations);
 	virtual void PhysClimbLadder(float DeltaTime, int32 Iterations);
+	void BaseCharacterOnLadderPhysRotation(float DeltaTime);
 	
 	UPROPERTY(Category="Character Movement: Swimming", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float SwimmingCapsuleHalfSize = 50.f;
@@ -113,17 +118,29 @@ protected:
 	UPROPERTY(Category="Character Movement: Ladder", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
 	float LadderMinBottomOffset = 80;
 	UPROPERTY(Category="Character Movement: Ladder", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
-	float LadderMaxTopffset = 60;
+	float LadderMaxTopOffset = 60;
+	/**
+	 * In degrees
+	 */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Detection Setting", meta = (UIMin = 0.f, UIMax = 120.f, ClampMin = 0.f, ClampMax = 120.f))
+	float MaxLadderAngleToCharacterForward  = 75;
+	
+	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
+	float MaxWalkWithWeaponSpeed = 60;
+	UPROPERTY(Category="Character Movement: Walking", EditAnywhere, BlueprintReadWrite, meta=(ClampMin="0", UIMin="0"))
+	float MaxAimWalkWithWeaponSpeed = 250;
 private:
 	//begin additional params for spring settings
 	UPROPERTY(Transient, DuplicateTransient)
 	class AOBaseCharacter* CachedBaseCharacter;
 	//end spring settings
 
-	FMantlingMovementParameters CurrentMantlingParameters;
+	FOMantlingMovementParameters CurrentMantlingParameters;
 	FTimerHandle MantlingTimer;
 
 	UPROPERTY()
 	const class AOLadderInteractiveActor* CurrentLadder = nullptr;
 	bool bCrossLadderMinBottomOffset = false;
+	FRotator ToLadderRotator = FRotator::ZeroRotator;
+	bool bRotateToLadder = false;
 };

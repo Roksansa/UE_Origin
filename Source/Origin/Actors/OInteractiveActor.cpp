@@ -18,7 +18,6 @@ void AOInteractiveActor::BeginPlay()
 
 void AOInteractiveActor::OnInteractionVolumeBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Cyan, FString::Format(TEXT(" LOC LOC LOC LOC LOC !!! {0} "), {IsValid(InteractionVolume)}), true);
 	AOBaseCharacter* BaseCharacter = Cast<AOBaseCharacter>(OtherActor);
 	if (!IsValid(BaseCharacter))
 	{
@@ -33,7 +32,6 @@ void AOInteractiveActor::OnInteractionVolumeBeginOverlap(UPrimitiveComponent* Ov
 
 void AOInteractiveActor::OnInteractionVolumeEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Cyan, FString::Format(TEXT(" LOC LOC LOC LOC LOC 222222!!! {0} "), {IsValid(InteractionVolume)}), true);
 	AOBaseCharacter* BaseCharacter = Cast<AOBaseCharacter>(OtherActor);
 	if (!IsValid(BaseCharacter))
 	{

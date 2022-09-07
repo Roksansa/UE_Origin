@@ -6,9 +6,8 @@
 #include "OBaseCharacter.h"
 #include "OPlayerCharacter.generated.h"
 
-/**
- * 
- */
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAllowFire, bool);
+
 UCLASS(Blueprintable)
 class ORIGIN_API AOPlayerCharacter : public AOBaseCharacter
 {
@@ -17,6 +16,9 @@ class ORIGIN_API AOPlayerCharacter : public AOBaseCharacter
 public:
 
 	AOPlayerCharacter();
+	
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 	virtual void LookUp(float Value) override;
 	virtual void Turn(float Value) override;
@@ -41,12 +43,14 @@ public:
 	virtual void OnEndSwimming(float HalfHeightAdjust, float ScaledHeightAdjust) override;
 
 	virtual void ClimbLadder(float Value) override;
-	virtual void InteractionWithLadder() override;
 
-	virtual void Fire() override;
+	virtual void StartFire() override;
+	virtual void StopFire() override;
 
 	float GetViewPitchMin() const;
 	float GetViewPitchMax() const;
+
+	FOnAllowFire OnAllowFire;
 protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Character|Camera")
@@ -63,4 +67,18 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config|Crawling")
 	float LocationXMeshOffsetForCrawling = 50.f;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Config|Camera")
+	float CurrentFOV = 90.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Character|Camera")
+	TSubclassOf<UCameraShake> CameraShake;
+		
+	virtual void OnDie() override;
+	virtual void OnChangeHealth(float Health, float Diff, float MaxValue) override;
+private:
+	bool bWantFire = false;
+	FTimerHandle CheckFireTimerHandle;
+
+	void PlayCameraShake() const;
 };

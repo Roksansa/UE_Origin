@@ -92,4 +92,8 @@ private:
 
 	TWeakObjectPtr<class AOBaseCharacter> CachedCharacter;
 	TWeakObjectPtr<class UOBaseCharacterMovementComponent> CachedMovComp;
+
+#if !(UE_BUILD_SHIPPING || UE_BUILD_TEST)
+	class UODebugSubsystem* DebugSubsystem = nullptr;
+#endif
 };
